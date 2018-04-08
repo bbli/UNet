@@ -1,9 +1,10 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose
 from skimage import io
 from skimage import img_as_float
 from skimage.transform import downscale_local_mean
+from sklearn.preprocessing import StandardScaler
 from functools import partial
 
 import debug as D
@@ -14,6 +15,13 @@ def toTorch(image):
     new_image = new_image.view(-1,1,667,667)
     print(type(new_image))
     return new_image
+
+class Normalize():
+    def __init__(self):
+        self.scalar = StandardScaler()
+    def __call__(self, image):
+        self.scalar.fit(image)
+        return self.scalar.transform(image)
     
 
 class ParhyaleDataset(Dataset):
@@ -32,11 +40,10 @@ class ParhyaleDataset(Dataset):
 
 
 if __name__=='__main__':
-    from sys import getsizeof
     path = '/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif'
 
     downscale = partial(downscale_local_mean, factors=(3,3))
-    transforms = Compose([downscale,toTorch, Normalize(0,1)])
+    transforms = Compose([downscale, Normalize(), toTorch])
     # transforms = Compose ([ToTensor(),Normalize(0,1)])
 
     dataset = ParhyaleDataset(path,transforms)

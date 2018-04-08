@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torchvision
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
+from utils import *
 
 import os
 import matplotlib
@@ -55,10 +56,20 @@ class UNet(nn.Module):
         return z
 
 if __name__ == '__main__':
-    input_data = img_as_float(io.imread('/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif')) :
+    # input_data = img_as_float(io.imread('/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif')) :
 
-    x = Variable(torch.from_numpy(input_data).float()).cuda()
-    x = x.view(1,1,2001,2001)
+    # x = Variable(torch.from_numpy(input_data).float()).cuda()
+    # x = x.view(1,1,2001,2001)
     model = UNet().cuda()
     z = model(x)
 
+    path = '/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif'
+
+    downscale = partial(downscale_local_mean, factors=(3,3))
+    transforms = Compose([downscale, Normalize(), toTorch])
+    # transforms = Compose ([ToTensor(),Normalize(0,1)])
+
+    dataset = ParhyaleDataset(path,transforms)
+
+    img = dataset[]
+    img = tensor_format(img)
