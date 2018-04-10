@@ -5,7 +5,7 @@ import torchvision
 from tensorboardX import SummaryWriter
 from utils import *
 # from functools import partial
-import Data as D
+from Data import *
 
 import os
 import matplotlib
@@ -38,40 +38,48 @@ class UNet(nn.Module):
     def __init__(self):
         super().__init__()
         # note weights are being initalized randomly at the moment
-        self.conv1 = nn.Conv2d(1,64,3)
+        self.conv1a = nn.Conv2d(1,64,3)
+        self.conv1b = nn.Conv2d(64,64,3)
+
+        self.conv2a = nn.Conv2d(64,128,3)
+        self.conv2b = nn.Conv2d(128,128,3)
+
+        self.conv3a = nn.Conv2d(128,256,3)
+        self.conv3b = nn.Conv2d(256,256,3)
+
+        self.conv4a = nn.Conv2d(256,512,3)
+        self.conv4b = nn.Conv2d(512,512,3)
+
+        self.conv5a = nn.Conv2d(512,1024,3)
+        self.conv5b = nn.Conv2d(1024,1024,3)
+
         self.maxpool = nn.MaxPool2d(2)
-        self.conv2 = nn.Conv2d(64,128,3)
-        self.conv3 = nn.Conv2d(128,256,3)
-        self.conv4 = nn.Conv2d(256,512,3)
 
-        self.encode1 = nn.Sequential([nn.Conv2d(1,64,3),nn.ReLU(inplace=True)])
-        self.encode2 = nn.Sequential([nn.Conv2d(64,128,3),nn.ReLU(inplace=True)])
+        self.up1 = nn.ConvTranpose2d(1024,1024,3)
+        # self.encode1 = nn.Sequential([nn.Conv2d(1,64,3),nn.ReLU(inplace=True)])
+        # self.encode2 = nn.Sequential([nn.Conv2d(64,128,3),nn.ReLU(inplace=True)])
     def forward(self,x):
-        # input dimensions: torch.Size([1, 1, 2001, 2001])
-        print(x.shape)
-        z = F.relu(self.conv1(x))
-        print(z.shape)
-        # now has dimensions: torch.Size([1, 64, 1994, 1994])
-        z = self.maxpool(z)
-        print(z.shape)
-        # now has dimensions torch.Size([1,64,997,997])
+        x = F.relu(self.conv1a(x))
+        z1 = F.relu(self.conv1b(x))
 
-        z = F.relu(self.conv2(z))
-        print(z.shape)
-        # now has dimensions torch.Size([1,128,990,990])
-        z = self.maxpool(z)
-        print(z.shape)
+        x = self.maxpool(z1)
+        x = F.relu(self.conv2a(x))
+        z2 = F.relu(self.conv2b(x))
 
-        z = F.relu(self.conv3(z))
-        print(z.shape)
-        z = self.maxpool(z)
-        print(z.shape)
-        
-        z = F.relu(self.conv4(z))
-        print(z.shape)
-        z = self.maxpool(z)
-        print(z.shape)
-        return z
+        x = self.maxpool(z2)
+        x = F.relu(self.conv3a(x))
+        z3 = F.relu(self.conv3b(x))
+
+        x = self.maxpool(z3)
+        x = F.relu(self.conv4a(x))
+        z4 = F.relu(self.conv4b(x))
+
+        x = self.maxpool(z4)
+        x = F.relu(self.conv5a(x))
+        x = F.relu(self.conv5b(x))
+
+        out = self.up1(x)
+        return x,out
 
 if __name__ == '__main__':
     # input_data = img_as_float(io.imread('/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif')) :
@@ -81,17 +89,14 @@ if __name__ == '__main__':
 
     path = '/data/bbli/gryllus_disk_images/'
 
-    original_size=2001
-    factor = 3
-    #make sure this divides evenly
-    down_size= original_size//factor
+    factor = 4
     downscale = partial(downscale_local_mean, 
                 factors=(factor,factor))
-    transforms = Compose([downscale, toTorch(down_size),F.normalize ])
+    transforms = Compose([rescale, downscale, toTorch ])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
 
     dataset = ParhyaleDataset(path,transforms)
-
+    #############################################
     img = dataset[0]
     img = tensor_format(img)
 
