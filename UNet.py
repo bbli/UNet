@@ -55,9 +55,10 @@ class UNet(nn.Module):
 
         self.maxpool = nn.MaxPool2d(2)
 
-        self.up1 = nn.ConvTranpose2d(1024,1024,3)
+        self.up1 = nn.ConvTranspose2d(1024,10,3)
         # self.encode1 = nn.Sequential([nn.Conv2d(1,64,3),nn.ReLU(inplace=True)])
         # self.encode2 = nn.Sequential([nn.Conv2d(64,128,3),nn.ReLU(inplace=True)])
+
     def forward(self,x):
         x = F.relu(self.conv1a(x))
         z1 = F.relu(self.conv1b(x))

@@ -1,6 +1,9 @@
 import os
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
+from torch.autograd import Variable
+import torch.nn as nn
+import torch
 
 
 from skimage import io
@@ -37,3 +40,7 @@ def stackImages(image_list):
     return batch_array
 
 dataset = ParhyaleDataset(path)
+
+dummy = Variable(torch.Tensor(1,1,4,4))
+Up = nn.ConvTranspose2d(1,4,3)
+z = Up(dummy)
