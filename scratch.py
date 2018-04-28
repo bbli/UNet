@@ -62,3 +62,10 @@ z3 = Up3(dummy)
 print(z3.shape)
 
 # I feel like Upsample is the correct way to go, since it should mirror the Max Pooling
+
+##TEsting Standarize class
+test_images = np.array([[[0,1],[1,1]],[[2,3],[3,3]]])
+test_img = np.array([[1,2],[2,2]])
+
+
+

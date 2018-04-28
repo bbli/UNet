@@ -5,19 +5,22 @@
 > set up weight initalization according to paper
     * well, the purpose of weight initalization is to preserve the variance of the normalized input. So should I be normalize the dataset?
 
+> normalize each pixel
+> test Standarize class
+> somehow down_size before fitting
+
 * label images with Ilastik
 * code up Gaussian weight map
 
 
 ## Fake Data TODO
 * figure out input ouput disparity!!!
-* figure out weight map
+    * email about this
 * Define accuracy function
 
 * create fake data
-* normalize each pixel
-    * test Standarize class
-    * somehow down_size before fitting
+    * think about how to gauge it
+* figure out class weight map
 * code up training protocol
 
 

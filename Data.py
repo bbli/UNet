@@ -9,6 +9,7 @@ import numpy as np
 from skimage.transform import downscale_local_mean
 from sklearn.preprocessing import StandardScaler
 from functools import partial
+import ipdb
 
 from utils import *
     
@@ -29,16 +30,25 @@ def stackImages(image_list):
         batch_array[i] = pic
     return batch_array
 
+def downsize(images,factor):
+    new_tensor = downscale_local_mean(images[0],factors=(factor,factor))
+    new_tensor = new_tensor.reshape(1,*new_tensor.shape)
+    for image in images[1:]:
+        new_image = downscale_local_mean(image,factors=(factor,factor))
+        new_image = new_image.reshape(1,*new_image.shape)
+        # ipdb.set_trace()
+        new_tensor = np.concatenate((new_tensor,new_image),axis=0)
+    return new_tensor
 class ParhyaleDataset(Dataset):
-    def __init__(self,path,factor,transform=None):
+    def __init__(self,path,factor=None,transform=None):
         self.transform = transform
-
         self.images = stackImages(readImages(path))
-        self.downsize(images,factor)
-        ## For the situation that new data comes in and we want to retrain from scratch
-    def fit(self,scalars):
-        for scalar in scalars:
-            scalar.fit(self.images)
+        if factor:
+            self.images = downsize(self.images,factor)
+        print(np.mean(self.images[0]))
+    def fit(self,scalers):
+        for scaler in scalers:
+            scaler.fit(self.images)
     def __len__(self):
         return len(self.images)
     def __getitem__(self,index):
@@ -47,8 +57,6 @@ class ParhyaleDataset(Dataset):
             return self.transform(image)
         else:
             return image
-    def downsize(self,images,factor):
-
 ######################################################
 
 def toTorch(image):
@@ -57,42 +65,52 @@ def toTorch(image):
     new_image = new_image.view(1,down_size,down_size)
     return new_image
 
-def rescale(image):
-    return image/300
-
 ## wrapper so StandardScaler will work inside a Pytorch Compose
-class Standarize():
-    def __init__(self):
-        self.scalar = StandardScaler(with_std=False)
-    def __call__(self, image):
-        ## reshape
-        image=self.scalar.transform(image)
-        return image.reshape(....)
-    def fit(self,images):
-        ## reshape
-        self.scalar.fit(images)
-
-# class Standarize(StandardScaler):
-    # def __init__(self,with_std=False):
-        # super.__init__(self,with_std)
-    # def __call__(self,image):
-        # ## rescale
-        # return self.transform(image)
+#images is a 3D Tensor
+# class Standarize():
+    # def __init__(self):
+        # self.scaler = StandardScaler(with_std=False)
+    # def __call__(self, image):
+        # ## reshape
+        # shape = image.shape[-1]
+        # image = image.reshape(1,shape*shape)
+        # image=self.scaler.transform(image)
+        # return image.reshape(shape,shape)
     # def fit(self,images):
         # ## reshape
-        # super.fit(images)
+        # length = len(images)
+        # images = images.reshape(length,-1)
+        # self.scaler.fit(images)
+class Standarize(StandardScaler):
+    def __init__(self,with_std=False):
+        ## No need to pass self b/c this is call time
+        super().__init__(with_std=False)
+    def __call__(self,image):
+        ## rescale
+        shape = image.shape[-1]
+        image = image.reshape(1,shape*shape)
+        image=self.transform(image)
+        return image.reshape(shape,shape)
+    def fit(self,images):
+        ## reshape
+        length = len(images)
+        images = images.reshape(length,-1)
+        super().fit(images)
 
 ##########################################################
 if __name__=='__main__':
     path = '/data/bbli/gryllus_disk_images/'
 
-    factor = 4
     center = Standarize()
-    downscale = partial(downscale_local_mean, factors=(factor,factor))
-    transforms = Compose([center, downscale, toTorch ])
+    transforms = Compose([center,toTorch ])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
 
-    dataset = ParhyaleDataset(path,transforms)
+    dataset = ParhyaleDataset(path,factor=4,transform=transforms)
     dataset.fit([center])
 
     train_set = DataLoader(dataset,shuffle=True)
+    count =0
+    for i,_ in enumerate(dataset):
+        a = np.mean(dataset[i].numpy())
+        print(a)
+        count += a 
