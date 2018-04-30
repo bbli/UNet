@@ -1,4 +1,3 @@
-
 ## MAIN TODO
 * figure out pixel weight map-> Can't until I get labels
 
@@ -14,14 +13,23 @@
 
 
 ## Fake Data TODO
-* figure out input ouput disparity!!!
-    * email about this
-* Define accuracy function
+Purpose of this is to 
+1. practie tuning hyperparameters
+2. test that neural network is outputting results
+3. practice data augmentation
 
-* create fake data
-    * think about how to gauge it
-* figure out class weight map
-* code up training protocol
+* Tell Sebastian we can't increase the kernel size without drastically decreasing the output image
+
+> create 11 train, 1 test and save it
+* figure out why vim autocomplete is so slow now
+* do base training on it
+    * figure out class weight map per image
+    * code up training protocol
+        1. new optimizer after every iteration
+
+* learn how to use torchsample
+* figure out input ouput disparity!!!
+* Define accuracy function
 
 
 ## Questions
