@@ -56,31 +56,33 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self):
+    def __init__(self,kernel_size=3,feature_maps=32):
         super().__init__()
         # note weights are being initalized randomly at the moment
+        self.kernel_size=kernel_size
+        self.feature= feature_maps
         self.maxpool = nn.MaxPool2d(2)
 
-        self.encode1 = Convolve(1,64,3,'d1')
-        self.encode2 = Convolve(64,128,3,'d2')
-        self.encode3 = Convolve(128,256,3,'d3')
-        self.encode4 = Convolve(256,512,3,'d4')
+        self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1')
+        self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2')
+        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3')
+        self.encode4 = Convolve(self.feature*4,self.feature*8,self.kernel_size,'d4')
 
-        self.center = Convolve(512,1024,3,'c')
+        self.center = Convolve(self.feature*8,self.feature*16,self.kernel_size,'c')
 
-        self.decode4 = Convolve(1024,512,3,'u4')
-        self.decode3 = Convolve(512,256,3,'u3')
-        self.decode2 = Convolve(256,128,3,'u2')
-        self.decode1 = Convolve(128,64,3,'u1')
+        self.decode4 = Convolve(self.feature*16,self.feature*8,self.kernel_size,'u4')
+        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3')
+        self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2')
+        self.decode1 = Convolve(self.feature*2,self.feature,self.kernel_size,'u1')
 
 
-        self.up4 = UpSample(1024,512,3)
-        self.up3 = UpSample(512,256,3)
-        self.up2 = UpSample(256,128,3)
-        self.up1 = UpSample(128,64,3)
+        self.up4 = UpSample(self.feature*16,self.feature*8,self.kernel_size)
+        self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
+        self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
+        self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
         # output channel is 1 b/c we have grayscale
-        self.final = nn.Conv2d(64,1,1)
+        self.final = nn.Conv2d(self.feature,2,1)
 
     def forward(self,x):
         d1= self.encode1(x)
@@ -154,15 +156,16 @@ if __name__ == '__main__':
 
     path = '/data/bbli/gryllus_disk_images/'
 
-    factor = 4
-    downscale = partial(downscale_local_mean, 
-                factors=(factor,factor))
-    transforms = Compose([rescale, downscale, toTorch])
+    center = Standarize()
+    transforms = Compose([center,toTorch ])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
 
-    dataset = ParhyaleDataset(path,transforms)
+    dataset = ParhyaleDataset(path,factor=4,transform=transforms)
+    dataset.fit([center])
+    train_set = DataLoader(dataset,shuffle=True)
     #############################################
-    img = dataset[0]
+    # img = dataset[0]
+    img = next(iter(train_set))
     img = tensor_format(img)
 
     model = UNet().cuda()

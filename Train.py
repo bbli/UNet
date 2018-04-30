@@ -1,7 +1,7 @@
 criterion = nn.CrossEntropyLoss()
+epochs = 5
 
-
-for episode in range(num_episodes):
+for epoch in range(epochs):
     ################### **Getting and formatting the human trained data** #########################
     observations, actions = dataCollector(env)
     observations, actions = np.array(observations), np.array(actions)
@@ -16,6 +16,8 @@ for episode in range(num_episodes):
 
     ################### **Training the Network** #########################
     learn_rate = next(lr_generator)
+
+    ##########CREATE NEW ONE AFTER EVERY ITERATION
     optimizer = optim.SGD(net.parameters(),lr=learn_rate,momentum=0.90, nesterov=True,weight_decay=1e-4)
     printModel(net,optimizer)
 
