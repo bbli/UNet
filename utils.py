@@ -15,3 +15,12 @@ import seaborn as sns
 def hist(image):
     sns.distplot(image)
     plt.show()
+
+def score(outputs, labels):
+    '''
+    Assumptions: outputs and labels are Pytorch variables
+    '''
+    pred = argMax(outputs)
+    truth = (pred == labels.data)
+    return truth.sum()/len(truth)
+
