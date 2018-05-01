@@ -34,9 +34,9 @@ class FakeDataset(Dataset):
     def __getitem__(self,index):
         image = self.images[index]
         if self.transform:
-            return self.transform(image)
+            return self.transform(image),self.transform(image)
         else:
-            return image
+            return image, image
 ######################################################
 
 def toTorch(image):
@@ -92,7 +92,8 @@ if __name__=='__main__':
     train_set = DataLoader(train_dataset,shuffle=True)
     count =0
     ## final count should be 0 since each pixel location has been normalized to 0 mean, and we are adding them all up as random variables
+    # numbers are -0.003, 
     for i,_ in enumerate(train_dataset):
-        a = np.mean(train_dataset[i].numpy())
+        a = np.mean(train_dataset[i][0].numpy())
         print(a)
         count += a 

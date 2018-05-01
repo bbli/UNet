@@ -21,16 +21,13 @@ Purpose of this is to
 * Tell Sebastian we can't increase the kernel size without drastically decreasing the output image
 
 > create 11 train, 1 test and save it
-* do base training on it
-    * figure out class weight map per image
-    * code up training protocol
-        1. new optimizer after every iteration to account for weight map
+* code up training protocol
+    * defin accuracy function once I understand input output disparity
+    * figure out class weight map per imag: new optimizer after every iteration to account for weight map
     * figure out what needs to be done differently with test set.
 
 * learn how to use torchsample
 * figure out why vim autocomplete is so slow now
-* figure out input ouput disparity!!!
-* Define accuracy function
 
 
 ## Questions
