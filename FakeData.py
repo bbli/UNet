@@ -80,8 +80,8 @@ class Standarize(StandardScaler):
 
 ##########################################################
 if __name__=='__main__':
-    train_path = '/home/bbli/ML_Code/UNet/fake/train_images.npy'
-    test_path = '/home/bbli/ML_Code/UNet/fake/train_images.npy'
+    train_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
+    test_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
 
     center = Standarize()
     transforms = Compose([center,toTorch ])
