@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import ipdb
 
 from utils import *
+from UNet import *
     
 ##########################################################
 def downsize(images,factor):
@@ -95,5 +96,12 @@ if __name__=='__main__':
     # numbers are -0.003, 
     for i,_ in enumerate(train_dataset):
         a = np.mean(train_dataset[i][0].numpy())
-        print(a)
         count += a 
+    print("Mean pixel value: {}".format(count))
+
+    img,label = next(iter(train_set))
+    img = tensor_format(img)
+
+    model = UNet().cuda()
+    model.apply(weightInitialization)
+    z = model(img)

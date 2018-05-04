@@ -16,22 +16,22 @@
 Purpose of this is to 
 1. practie tuning hyperparameters
 2. test that neural network is outputting results
-3. practice data augmentation
 
 * Tell Sebastian we can't increase the kernel size without drastically decreasing the output image
 
-> create 11 train, 1 test and save it
+> figure out diameter of average cell: 30
+* add layer parameter and see what it does to data
 * code up training protocol
+    * gaussian convolve fake data
     * defin accuracy function once I understand input output disparity
     * figure out class weight map per imag: new optimizer after every iteration to account for weight map
     * figure out what needs to be done differently with test set.
 
-* learn how to use torchsample
 * figure out why vim autocomplete is so slow now
 
 
 ## Questions
-
+* Yeah, so average cell has a diameter of roughly 30
 
 ## Completed
 * Figure out whether I should be using transpose or UpSample
@@ -40,6 +40,9 @@ Purpose of this is to
 * complete network
 * Understand how to use 2D CrossEntropyLoss
     * does reshaping preserve differentiability?Doesn't matter, as I am using 2D Cross Entropy Loss
+* Why am I uncomfortable with cropping?
+    * In some senses, it should help because you feed the network useless information. 
+    * You are teaching the neural network to not care about the boundary.
 
 
 -1. Test on original dataset

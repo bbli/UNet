@@ -144,8 +144,8 @@ def weightInitialization(m):
         m.weight.data.normal_(0, math.sqrt(2. / n))
         m.bias.data.normal_(0, math.sqrt(2. / n))
         print("Changed!")
-        global change_count 
-        change_count +=1
+        # global change_count 
+        # change_count +=1
 
 if __name__ == '__main__':
     change_count =0
