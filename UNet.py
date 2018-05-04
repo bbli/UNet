@@ -42,6 +42,7 @@ class UpSample(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):
         super().__init__()
         self.up = nn.ConvTranspose2d(in_channels,out_channels,kernel_size=kernel_size,stride=2)
+        # self.up = nn.Upsample(scale_factor=2)
     def forward(self,x):
         x = self.up(x)
         print(x.shape)
@@ -56,7 +57,7 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self,kernel_size=3,feature_maps=32):
+    def __init__(self,kernel_size=7,feature_maps=8):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
@@ -68,7 +69,7 @@ class UNet(nn.Module):
         self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3')
         self.encode4 = Convolve(self.feature*4,self.feature*8,self.kernel_size,'d4')
 
-        self.center = Convolve(self.feature*8,self.feature*16,self.kernel_size,'c')
+        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c')
 
         self.decode4 = Convolve(self.feature*16,self.feature*8,self.kernel_size,'u4')
         self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3')
@@ -93,19 +94,10 @@ class UNet(nn.Module):
         d3 = self.maxpool(d2)
         d3 = self.encode3(d3)
 
-        d4 = self.maxpool(d3)
-        d4 = self.encode4(d4) 
-
-        c = self.maxpool(d4)
+        c = self.maxpool(d3)
         c = self.center(c)
 
-        u4 = self.up4(c)
-        u4 = crop_and_concat(u4,d4)
-        u4 = self.decode4(u4)
-
-        u3 = self.up3(u4)
-        # assert 1==0, "Debug from here"
-        # ipdb.set_trace()
+        u3 = self.up3(c)
         u3 = crop_and_concat(u3,d3)
         u3 = self.decode3(u3)
 
