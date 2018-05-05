@@ -21,9 +21,10 @@ def downsize(images,factor):
     return new_tensor
 
 class FakeDataset(Dataset):
-    def __init__(self,path,factor=None,transform=None):
+    def __init__(self,image_path,label_path,factor=None,transform=None):
         self.transform = transform
-        self.images = np.load(path)
+        self.images = np.load(image_path)
+        self.labels = np.load(label_path)
         if factor:
             self.images = downsize(self.images,factor)
         # print(np.mean(self.images[0]))
@@ -34,10 +35,11 @@ class FakeDataset(Dataset):
         return len(self.images)
     def __getitem__(self,index):
         image = self.images[index]
+        label = self.labels[index]
         if self.transform:
-            return self.transform(image),self.transform(image)
+            return self.transform(image),label
         else:
-            return image, image
+            return image, label
 ######################################################
 
 def toTorch(image):
@@ -80,8 +82,8 @@ class Standarize(StandardScaler):
 
 ##########################################################
 if __name__=='__main__':
-    train_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
-    test_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
+    train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
+    train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
 
     center = Standarize()
     transforms = Compose([center,toTorch ])
