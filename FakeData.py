@@ -37,9 +37,9 @@ class FakeDataset(Dataset):
         image = self.images[index]
         label = self.labels[index]
         if self.transform:
-            return self.transform(image),label
+            return toTorch(self.transform(image)),toTorch(label)
         else:
-            return image, label
+            return toTorch(image), toTorch(label)
 ######################################################
 
 def toTorch(image):
@@ -65,7 +65,7 @@ def toTorch(image):
         # images = images.reshape(length,-1)
         # self.scaler.fit(images)
 class Standarize(StandardScaler):
-    def __init__(self,with_std=False):
+    def __init__(self):
         ## No need to pass self b/c this is call time
         super().__init__(with_std=False)
     def __call__(self,image):
@@ -86,10 +86,10 @@ if __name__=='__main__':
     train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
 
     center = Standarize()
-    transforms = Compose([center,toTorch ])
+    transforms = Compose([center])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
 
-    train_dataset = FakeDataset(train_path,transform=transforms)
+    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
 
     train_set = DataLoader(train_dataset,shuffle=True)
