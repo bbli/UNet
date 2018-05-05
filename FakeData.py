@@ -4,6 +4,7 @@ from torchvision.transforms import Compose
 import numpy as np
 from skimage.transform import downscale_local_mean
 from sklearn.preprocessing import StandardScaler
+import skimage.util as util
 import ipdb
 
 from utils import *
@@ -43,9 +44,9 @@ class FakeDataset(Dataset):
 ######################################################
 
 def toTorch(image):
-    down_size,_ = image.shape
     new_image = torch.from_numpy(image).float()
-    new_image = new_image.view(1,down_size,down_size)
+    ## extra dimension for the feature channel
+    new_image = new_image.view(1,*image.shape)
     return new_image
 
 ## wrapper so StandardScaler will work inside a Pytorch Compose
@@ -80,33 +81,36 @@ class Standarize(StandardScaler):
         images = images.reshape(length,-1)
         super().fit(images)
 
+def Padder(factor):
+    def f(image):
+        return util.pad(image,factor,mode='edge') 
+    return f
+
+
 ##########################################################
 if __name__=='__main__':
     train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
     train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
 
+    #### Defining transform and Dataset class######
     center = Standarize()
-    transforms = Compose([center])
-    # transforms = Compose ([ToTensor(),Standarize(0,1)])
-
+    pad = Padder(100)
+    transforms = Compose([center,pad])
     train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
+    checkTrainSet(train_dataset)
+    ##########################################################
 
     train_set = DataLoader(train_dataset,shuffle=True)
-    count =0
-    ## final count should be 0 since each pixel location has been normalized to 0 mean, and we are adding them all up as random variables
-    # numbers are -0.003, 
-    for i,_ in enumerate(train_dataset):
-        a = np.mean(train_dataset[i][0].numpy())
-        count += a 
-    print("Mean pixel value: {}".format(count))
 
-    # img,label = next(iter(train_set))
-    # img = tensor_format(img)
-    size = 700
-    img = torch.Tensor(1,1,size,size)
+    img,label = next(iter(train_set))
+    # size = 700
+    # img = torch.Tensor(1,1,size,size)
+    # make into pytorch cuda variables
     img = tensor_format(img)
 
     model = UNet().cuda()
     model.apply(weightInitialization)
     z = model(img)
+    label = tensor_format(label).long()
+    print(score(z,label))

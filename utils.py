@@ -1,6 +1,8 @@
 ## Debug Functions
+import ipdb
 from inspect import getsource
 from sys import getsizeof
+import numpy as np
 
 def code(function):
     print(getsource(function))

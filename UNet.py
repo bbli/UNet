@@ -57,7 +57,7 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self,kernel_size=6,feature_maps=32):
+    def __init__(self,kernel_size=6,feature_maps=8):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
@@ -112,7 +112,7 @@ class UNet(nn.Module):
 
         u1 = self.final(u1)
         print(u1.shape)
-        return u1
+        return F.softmax(u1,dim=1)
 
 def crop_and_concat(upsampled, bypass):
     ## may run to troubles if c is not even. 
