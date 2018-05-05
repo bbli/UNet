@@ -99,7 +99,10 @@ if __name__=='__main__':
         count += a 
     print("Mean pixel value: {}".format(count))
 
-    img,label = next(iter(train_set))
+    # img,label = next(iter(train_set))
+    # img = tensor_format(img)
+    size = 700
+    img = torch.Tensor(1,1,size,size)
     img = tensor_format(img)
 
     model = UNet().cuda()

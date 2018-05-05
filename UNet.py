@@ -57,7 +57,7 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self,kernel_size=7,feature_maps=8):
+    def __init__(self,kernel_size=6,feature_maps=32):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
@@ -98,6 +98,7 @@ class UNet(nn.Module):
         c = self.center(c)
 
         u3 = self.up3(c)
+        # ipdb.set_trace()
         u3 = crop_and_concat(u3,d3)
         u3 = self.decode3(u3)
 
