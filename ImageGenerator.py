@@ -3,6 +3,8 @@ import math
 import ipdb
 from skimage import draw
 from skimage import io
+from skimage.filters import gaussian
+from skimage.util import random_noise
 
 ##########################################################
 ##########################
@@ -36,6 +38,8 @@ def RandomImage(num,radius,length=500):
     return image
 ##########################################################
 
+
+
 if __name__ == '__main__':
     test_point = np.array([1,2])
     test_point2 = np.array([2,4])
@@ -44,15 +48,37 @@ if __name__ == '__main__':
     num_train = 11
     num_test =1
     radius = 15
-    train_images = RandomImage(10,radius)
-    train_images = train_images.reshape(1,*train_images.shape)
+    train_labels = RandomImage(10,radius)
+    train_labels = train_labels.reshape(1,*train_labels.shape)
     for _ in range(num_train-1):
         random_num = np.random.randint(1,20)
         img = RandomImage(random_num,radius)
         img= img.reshape(1,*img.shape)
-        train_images = np.concatenate((train_images, img),axis=0)
+        train_labels = np.concatenate((train_labels, img),axis=0)
 
-    test_images = RandomImage(10,radius)
-    test_images = test_images.reshape(1,*test_images.shape)
+    test_labels = RandomImage(10,radius)
+    test_labels = test_labels.reshape(1,*test_labels.shape)
+
+##########################################################
+    for i,image in enumerate(train_labels):
+        new_image = random_noise(image)
+        new_image = gaussian(new_image,sigma=1)
+        new_image = new_image.reshape(1,*new_image.shape)
+        if i==0:
+            train_images = new_image
+        else:
+            train_images = np.concatenate((train_images,new_image),axis=0)
+    for i,image in enumerate(test_labels):
+        new_image = random_noise(image)
+        new_image = gaussian(new_image,sigma=1)
+        new_image = new_image.reshape(1,*new_image.shape)
+        if i==0:
+            test_images = new_image
+        else:
+            test_images = np.concatenate((train_images,new_image),axis=0)
+
+    
+    np.save('fake/train_labels',train_labels)
+    np.save('fake/test_labels',test_labels)
     np.save('fake/train_images',train_images)
-    np.save('fake/test_image',test_images)
+    np.save('fake/test_images',test_images)
