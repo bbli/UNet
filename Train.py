@@ -35,7 +35,7 @@ net = UNet().cuda()
 net.apply(weightInitialization)
 net.train()
 
-learn_rate = 4e-2
+learn_rate = 1e-2
 momentum_rate = 0.8
 cyclic_rate = 25
 epochs = 50
@@ -49,8 +49,8 @@ w.add_text('Training Parameters',training_parameters)
 # weight_map = np.array([0.01,0.99])
 
 # hopefully this will punish misclassification of cell as bg more
-# alpha = 0.028
-# weight_map = np.array([alpha,1-alpha])
+alpha = 0.04
+weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
 
