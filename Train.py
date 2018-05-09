@@ -48,8 +48,7 @@ w.add_text('Training Parameters',training_parameters)
 # ipdb.set_trace()
 # weight_map = np.array([0.01,0.99])
 
-# hopefully this will punish misclassification of cell as bg more
-alpha = 0.04
+alpha = 0.5
 weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
