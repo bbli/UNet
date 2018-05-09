@@ -38,16 +38,19 @@ class FakeDataset(Dataset):
         image = self.images[index]
         label = self.labels[index]
         if self.transform:
-            return toTorch(self.transform(image)),toTorch(label)
+            return imageToTorch(self.transform(image)),labelToTorch(label)
         else:
-            return toTorch(image), toTorch(label)
+            return imageToTorch(image), labelToTorch(label)
 ######################################################
 
-def toTorch(image):
+def imageToTorch(image):
     new_image = torch.from_numpy(image).float()
     ## extra dimension for the feature channel
     new_image = new_image.view(1,*image.shape)
     return new_image
+
+def labelToTorch(image):
+    return torch.from_numpy(image).long()
 
 ## wrapper so StandardScaler will work inside a Pytorch Compose
 #images is a 3D Tensor
@@ -96,9 +99,10 @@ if __name__=='__main__':
     center = Standarize()
     pad = Padder(100)
     transforms = Compose([center,pad])
+
     train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
-    checkTrainSet(train_dataset)
+    checkTrainSetMean(train_dataset)
     ##########################################################
 
     train_set = DataLoader(train_dataset,shuffle=True)
@@ -108,9 +112,11 @@ if __name__=='__main__':
     # img = torch.Tensor(1,1,size,size)
     # make into pytorch cuda variables
     img = tensor_format(img)
+    label = tensor_format(label)
 
     model = UNet().cuda()
     model.apply(weightInitialization)
+
     z = model(img)
-    label = tensor_format(label).long()
+    print(z.shape)
     print(score(z,label))
