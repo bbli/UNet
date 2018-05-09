@@ -30,12 +30,12 @@ class Convolve(nn.Module):
         self.conv2 = nn.Conv2d(out_channels,out_channels,kernel_size=kernel_size)
         self.string = string
     def forward(self,x):
-        print("{} size before convolve: {}".format(self.string, x.shape))
+        # print("{} size before convolve: {}".format(self.string, x.shape))
 
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
 
-        print("{} size after convolve: {}".format(self.string, x.shape))
+        # print("{} size after convolve: {}".format(self.string, x.shape))
         return x
 
 class UpSample(nn.Module):
@@ -45,7 +45,7 @@ class UpSample(nn.Module):
         # self.up = nn.Upsample(scale_factor=2)
     def forward(self,x):
         x = self.up(x)
-        print(x.shape)
+        # print(x.shape)
         return x
 
 # class LossFunction(Function):
@@ -111,7 +111,7 @@ class UNet(nn.Module):
         u1 = self.decode1(u1)
 
         u1 = self.final(u1)
-        print(u1.shape)
+        # print(u1.shape)
         return F.softmax(u1,dim=1)
 
 def crop_and_concat(upsampled, bypass):
@@ -131,12 +131,12 @@ def crop_and_concat(upsampled, bypass):
     return torch.cat((upsampled, bypass), 1)
 
 def weightInitialization(m):
-    print("Name",m.__class__.__name__)
+    # print("Name",m.__class__.__name__)
     if isinstance(m,nn.Conv2d) or isinstance(m,nn.ConvTranspose2d):
         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
         m.weight.data.normal_(0, math.sqrt(2. / n))
         m.bias.data.normal_(0, math.sqrt(2. / n))
-        print("Changed!")
+        # print("Changed!")
         # global change_count 
         # change_count +=1
 

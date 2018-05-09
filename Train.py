@@ -1,51 +1,63 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import Compose
+from tensorboardX import SummaryWriter
+from torch import optim
 import torch.nn as nn
 import ipdb
 
-import utils
+from utils import *
 from FakeData import *
 from UNet import *
 
 ################### **Creating Dataset** #########################
-train_path = '/home/bbli/ML_Code/UNet/fake/train_images.npy'
-test_path = '/home/bbli/ML_Code/UNet/fake/train_images.npy'
+train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
+train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
+test_images_path = '/home/bbli/ML_Code/UNet/Data/fake/test_images.npy'
+test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/test_labels.npy'
 
 center = Standarize()
-transforms = Compose([center,toTorch ])
+pad = Padder(100)
+transforms = Compose([center,pad])
 # transforms = Compose ([ToTensor(),Standarize(0,1)])
-
-train_dataset = FakeDataset(train_path,transform=transforms)
+##########################################################
+train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
 train_dataset.fit([center])
+checkTrainSetMean(train_dataset)
 
 train_loader = DataLoader(train_dataset,shuffle=True)
 ##########################################################
+test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
+test_loader = DataLoader(test_dataset,shuffle=True)
+##########################################################
 
-criterion = nn.CrossEntropyLoss()
 net = UNet().cuda()
 net.apply(weightInitialization)
 net.train()
-epochs = 5
+
+# weight_map = getWeightMap(train_loader)
+weight_map = np.array([0.001,0.999])
+weight_map = tensor_format(torch.FloatTensor(weight_map))
+criterion = nn.CrossEntropyLoss(weight=weight_map)
+optimizer = optim.Adam(net.parameters(),lr = 0.01)
+epochs = 10
 count =0
+w = SummaryWriter()
 for epoch in range(epochs):
     for idx,(img,label) in enumerate(train_loader):
         count += 1
-        ################### **Formatting Data** #########################
-        img, label = tensor_format(img), tensor_format(label)
-        label = label.long()
         ################### **Training the Network** #########################
+        img, label = tensor_format(img), tensor_format(label)
         # learn_rate = next(lr_generator)
 
         ########## Create NEW one after every ITERATION for WEIGHT MAP
         # optimizer = optim.SGD(net.parameters(),lr=learn_rate,momentum=0.90, nesterov=True,weight_decay=1e-4)
-        optimizer = optim.Adam(net.parameters(),lr = 0.01)
         optimizer.zero_grad()
         # printModel(net,optimizer)
         # ipdb.set_trace()
         # before_weights = weightMag(net)
         #########################
         output = net(img)
-
+        output, label = crop(output,label)
         acc = score(output,label)
         w.add_scalar('Accuracy', acc,count)
         # print("Accuracy: {}".format(acc))
@@ -65,3 +77,10 @@ for epoch in range(epochs):
 
 w.close()
 
+net.eval()
+for img, label in test_loader:
+    img, label = tensor_format(img), tensor_format(label)
+    output = net(img)
+    output, label = crop(output,label)
+    print(score(output,label))
+    showComparsion(output,label)

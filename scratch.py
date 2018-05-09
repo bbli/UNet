@@ -4,6 +4,8 @@ from torch.utils.data import Dataset, DataLoader
 from torch.autograd import Variable
 import torch.nn as nn
 import torch
+import ipdb
+import matplotlib.pyplot as plt
 
 
 from skimage import io
@@ -53,19 +55,47 @@ from skimage import img_as_float
 
 ## Testing if Transpose Convolution with stride =2 is the same as UpScale followed 2by2 kernel
 
-dummy = Variable(torch.Tensor(1,1,5,5))
-Up = nn.ConvTranspose2d(1,4,2,1,0)
-z = Up(dummy)
-print(z.shape)
-Up3 = nn.Upsample(scale_factor=2, mode = 'bilinear')
-z3 = Up3(dummy)
-print(z3.shape)
+# dummy = Variable(torch.Tensor(1,1,5,5))
+# Up = nn.ConvTranspose2d(1,4,2,1,0)
+# z = Up(dummy)
+# print(z.shape)
+# Up3 = nn.Upsample(scale_factor=2, mode = 'bilinear')
+# z3 = Up3(dummy)
+# print(z3.shape)
 
-# I feel like Upsample is the correct way to go, since it should mirror the Max Pooling
+# # I feel like Upsample is the correct way to go, since it should mirror the Max Pooling
 
-##TEsting Standarize class
-test_images = np.array([[[0,1],[1,1]],[[2,3],[3,3]]])
-test_img = np.array([[1,2],[2,2]])
+# ##TEsting Standarize class
+# test_images = np.array([[[0,1],[1,1]],[[2,3],[3,3]]])
+# test_img = np.array([[1,2],[2,2]])
 
 
+def testModel(test_loader):
+    for img, label in test_loader:
+        img, label = tensor_format(img), tensor_format(label)
+        output = net(img)
+        output, label = crop(output,label)
+        print(score(output,label))
+        showComparsion(output,label)
 
+def showComparsion(output,label):
+    '''
+    Input: output is a 4D Pytorch Variable, label is a 3D Pytorch Variable
+    '''
+    output, label = reduceTo2D(output,label)
+    fig = plt.figure(figsize=(15,15))
+    plt.subplot(1,2,1)
+    plt.imshow(output)
+    plt.subplot(1,2,2)
+    plt.imshow(label)
+    plt.show()
+
+def reduceTo2D(outputs,labels):
+    outputs = outputs.cpu().data.numpy()
+    labels = labels.cpu().data.numpy()
+    ## reduce down to 3D tensor by argmaxing the feature channel
+    outputs = np.argmax(outputs,axis=1)
+    ## reduce down to an image
+    labels = labels[0]
+    outputs = outputs[0]
+    return outputs,labels
