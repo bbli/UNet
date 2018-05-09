@@ -35,7 +35,7 @@ net = UNet().cuda()
 net.apply(weightInitialization)
 net.train()
 
-learn_rate = 1e-2
+learn_rate = 4e-2
 momentum_rate = 0.8
 cyclic_rate = 25
 epochs = 50
