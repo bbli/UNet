@@ -70,32 +70,39 @@ from skimage import img_as_float
 # test_img = np.array([[1,2],[2,2]])
 
 
-def testModel(test_loader):
-    for img, label in test_loader:
-        img, label = tensor_format(img), tensor_format(label)
-        output = net(img)
-        output, label = crop(output,label)
-        print(score(output,label))
-        showComparsion(output,label)
+# def testModel(test_loader):
+    # for img, label in test_loader:
+        # img, label = tensor_format(img), tensor_format(label)
+        # output = net(img)
+        # output, label = crop(output,label)
+        # print(score(output,label))
+        # showComparsion(output,label)
 
-def showComparsion(output,label):
-    '''
-    Input: output is a 4D Pytorch Variable, label is a 3D Pytorch Variable
-    '''
-    output, label = reduceTo2D(output,label)
-    fig = plt.figure(figsize=(15,15))
-    plt.subplot(1,2,1)
-    plt.imshow(output)
-    plt.subplot(1,2,2)
-    plt.imshow(label)
-    plt.show()
+# def showComparsion(output,label):
+    # '''
+    # Input: output is a 4D Pytorch Variable, label is a 3D Pytorch Variable
+    # '''
+    # output, label = reduceTo2D(output,label)
+    # fig = plt.figure(figsize=(15,15))
+    # plt.subplot(1,2,1)
+    # plt.imshow(output)
+    # plt.subplot(1,2,2)
+    # plt.imshow(label)
+    # plt.show()
 
-def reduceTo2D(outputs,labels):
-    outputs = outputs.cpu().data.numpy()
-    labels = labels.cpu().data.numpy()
-    ## reduce down to 3D tensor by argmaxing the feature channel
-    outputs = np.argmax(outputs,axis=1)
-    ## reduce down to an image
-    labels = labels[0]
-    outputs = outputs[0]
-    return outputs,labels
+# def reduceTo2D(outputs,labels):
+    # outputs = outputs.cpu().data.numpy()
+    # labels = labels.cpu().data.numpy()
+    # ## reduce down to 3D tensor by argmaxing the feature channel
+    # outputs = np.argmax(outputs,axis=1)
+    # ## reduce down to an image
+    # labels = labels[0]
+    # outputs = outputs[0]
+    # return outputs,labels
+
+for img, label in test_loader:
+    img, label = tensor_format(img), tensor_format(label)
+    output = net(img)
+    output, label = crop(output,label)
+    print(score(output,label))
+    showComparsion(output,label)

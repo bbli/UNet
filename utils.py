@@ -3,6 +3,7 @@ import ipdb
 from inspect import getsource
 from sys import getsizeof
 import numpy as np
+import matplotlib.pyplot as plt
 from torch.autograd import Variable
 
 def code(function):
@@ -71,7 +72,8 @@ def getWeightMap(dataloader):
     for img,label in dataloader:
         label = label.numpy()
         total_mean += label.mean()
-    total_mean += total_mean/len(dataloader)
+        print(label.mean())
+    total_mean = total_mean/len(dataloader)
     return np.array([total_mean,1-total_mean])
 
 def showComparsion(output,label):
@@ -82,8 +84,10 @@ def showComparsion(output,label):
     fig = plt.figure(figsize=(15,15))
     plt.subplot(1,2,1)
     plt.imshow(output)
+    plt.title("Prediction")
     plt.subplot(1,2,2)
     plt.imshow(label)
+    plt.title("Title")
     plt.show()
 
 def reduceTo2D(outputs,labels):
@@ -95,3 +99,10 @@ def reduceTo2D(outputs,labels):
     labels = labels[0]
     outputs = outputs[0]
     return outputs,labels
+
+def cyclic(period):
+    def f(episode):
+        modulus = episode % period
+        return 1/(1+0.05*modulus)
+    return f
+

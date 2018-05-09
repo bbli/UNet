@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import Compose
 from tensorboardX import SummaryWriter
+from torch.optim.lr_scheduler import LambdaLR
 from torch import optim
 import torch.nn as nn
 import ipdb
@@ -34,12 +35,19 @@ net = UNet().cuda()
 net.apply(weightInitialization)
 net.train()
 
-# weight_map = getWeightMap(train_loader)
-weight_map = np.array([0.001,0.999])
+weight_map = getWeightMap(train_loader)
+# ipdb.set_trace()
+# weight_map = np.array([0.01,0.99])
+
+# hopefully this will punish misclassification of cell as bg more
+# alpha = 0.028
+# weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
-optimizer = optim.Adam(net.parameters(),lr = 0.01)
-epochs = 10
+optimizer = optim.SGD(net.parameters(),lr = 9e-4,momentum=0.8)
+scheduler = LambdaLR(optimizer,lr_lambda=cyclic(25))
+
+epochs = 50
 count =0
 w = SummaryWriter()
 for epoch in range(epochs):
@@ -59,7 +67,8 @@ for epoch in range(epochs):
         output = net(img)
         output, label = crop(output,label)
         acc = score(output,label)
-        w.add_scalar('Accuracy', acc,count)
+        # print(acc)
+        w.add_scalar(' Accuracy', float(acc),count)
         # print("Accuracy: {}".format(acc))
         #########################
         loss = criterion(output, label)
@@ -69,6 +78,7 @@ for epoch in range(epochs):
         #########################
         loss.backward()
         optimizer.step()
+        scheduler.step()
         ################################################################
         # after_weights =weightMag(net)
         # relDiff_list = relDiff(before_weights,after_weights)
@@ -82,5 +92,5 @@ for img, label in test_loader:
     img, label = tensor_format(img), tensor_format(label)
     output = net(img)
     output, label = crop(output,label)
-    print(score(output,label))
+    print("Test score: {}".format(score(output,label)))
     showComparsion(output,label)

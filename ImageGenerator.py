@@ -47,16 +47,16 @@ if __name__ == '__main__':
     
     num_train = 11
     num_test =1
-    radius = 15
-    train_labels = RandomImage(10,radius)
+    radius = 25
+    num_circles = 20
+    train_labels = RandomImage(num_circles,radius)
     train_labels = train_labels.reshape(1,*train_labels.shape)
     for _ in range(num_train-1):
-        random_num = np.random.randint(1,20)
-        img = RandomImage(random_num,radius)
+        img = RandomImage(num_circles,radius)
         img= img.reshape(1,*img.shape)
         train_labels = np.concatenate((train_labels, img),axis=0)
 
-    test_labels = RandomImage(10,radius)
+    test_labels = RandomImage(num_circles,radius)
     test_labels = test_labels.reshape(1,*test_labels.shape)
 
 ##########################################################
@@ -82,3 +82,7 @@ if __name__ == '__main__':
     np.save('fake/test_labels',test_labels)
     np.save('fake/train_images',train_images)
     np.save('fake/test_images',test_images)
+    with open('fake/log.txt',"w") as f:
+        f.write("Number of circles: "+str(num_circles)+"\n")
+        f.write("Size of Radius: "+str(radius)+"\n")
+        f.write("Percentage of Circles: "+str(train_labels.mean())+"\n")

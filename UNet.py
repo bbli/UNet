@@ -57,7 +57,7 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self,kernel_size=6,feature_maps=8):
+    def __init__(self,kernel_size=6,feature_maps=4):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
