@@ -35,7 +35,16 @@ net = UNet().cuda()
 net.apply(weightInitialization)
 net.train()
 
+learn_rate = 1e-2
+momentum_rate = 0.8
+cyclic_rate = 25
+epochs = 50
 weight_map = getWeightMap(train_loader)
+training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
+
+w = SummaryWriter()
+w.add_text('Training Parameters',training_parameters)
+
 # ipdb.set_trace()
 # weight_map = np.array([0.01,0.99])
 
@@ -44,12 +53,12 @@ weight_map = getWeightMap(train_loader)
 # weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
-optimizer = optim.SGD(net.parameters(),lr = 2e-3,momentum=0.8)
-scheduler = LambdaLR(optimizer,lr_lambda=cyclic(25))
 
-epochs = 50
+
+optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
+scheduler = LambdaLR(optimizer,lr_lambda=cyclic(cyclic_rate))
+
 count =0
-w = SummaryWriter()
 for epoch in range(epochs):
     for idx,(img,label) in enumerate(train_loader):
         count += 1
