@@ -44,7 +44,7 @@ weight_map = getWeightMap(train_loader)
 # weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
-optimizer = optim.SGD(net.parameters(),lr = 9e-4,momentum=0.8)
+optimizer = optim.SGD(net.parameters(),lr = 2e-3,momentum=0.8)
 scheduler = LambdaLR(optimizer,lr_lambda=cyclic(25))
 
 epochs = 50
