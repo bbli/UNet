@@ -39,7 +39,9 @@ learn_rate = 1e-2
 momentum_rate = 0.8
 cyclic_rate = 25
 epochs = 50
+alpha = 0.06
 weight_map = getWeightMap(train_loader)
+weight_map = np.array([alpha,1-alpha])
 training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
 
 w = SummaryWriter()
@@ -48,8 +50,6 @@ w.add_text('Training Parameters',training_parameters)
 # ipdb.set_trace()
 # weight_map = np.array([0.01,0.99])
 
-alpha = 0.5
-weight_map = np.array([alpha,1-alpha])
 weight_map = tensor_format(torch.FloatTensor(weight_map))
 criterion = nn.CrossEntropyLoss(weight=weight_map)
 
