@@ -86,7 +86,7 @@ class Standarize(StandardScaler):
 
 def Padder(factor):
     def f(image):
-        return util.pad(image,factor,mode='edge') 
+        return util.pad(image,factor,mode='constant',constant_values=0) 
     return f
 
 
