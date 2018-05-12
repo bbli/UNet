@@ -142,26 +142,14 @@ def weightInitialization(m):
         # change_count +=1
 
 if __name__ == '__main__':
-    change_count =0
-    # input_data = img_as_float(io.imread('/data/bbli/gryllus_disk_images/cmp_1_1_T0000.tif')) :
-
-    # x = Variable(torch.from_numpy(input_data).float()).cuda()
-    # x = x.view(1,1,2001,2001)
-
-    path = '/data/bbli/gryllus_disk_images/'
-
-    center = Standarize()
-    transforms = Compose([center,toTorch ])
-    # transforms = Compose ([ToTensor(),Standarize(0,1)])
-
-    dataset = ParhyaleDataset(path,factor=4,transform=transforms)
-    dataset.fit([center])
-    train_set = DataLoader(dataset,shuffle=True)
-    #############################################
-    # img = dataset[0]
-    img = next(iter(train_set))
+    img,label = next(iter(train_loader))
     img = tensor_format(img)
+    label = tensor_format(label)
 
     model = UNet().cuda()
     model.apply(weightInitialization)
+
     z = model(img)
+    print("Dimension of output of Unet: "+str(z.shape))
+    z,label = crop(z,label)
+    print("Accuracy", score(z,label))

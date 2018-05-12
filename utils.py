@@ -117,3 +117,15 @@ def imageToTorch(image):
 def labelToTorch(image):
     return torch.from_numpy(image).long()
 
+def cosine(period):
+    def f(episode):
+        modulus = episode % period
+        return 0.5*(1.1+cos(pi*modulus/period))
+    return f
+
+def doubler(time_steps):
+    def f(episode):
+        ratio = episode // time_steps
+        return 2**ratio
+    return f
+

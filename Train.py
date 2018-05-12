@@ -10,29 +10,8 @@ from utils import *
 from Data import *
 from UNet import *
 
-################### **Creating Dataset** #########################
-train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
-train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
-test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
-test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
-
-
-center = Standarize()
-pad = Padder(100)
-transforms = Compose([center,pad])
-# transforms = Compose ([ToTensor(),Standarize(0,1)])
-##########################################################
-train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-train_dataset.fit([center])
-checkTrainSetMean(train_dataset)
-
-train_loader = DataLoader(train_dataset,shuffle=True)
-##########################################################
-test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
-test_loader = DataLoader(test_dataset,shuffle=True)
-##########################################################
 kernel_size=6
-feature_maps=32
+feature_maps=16
 
 net = UNet(kernel_size,feature_maps).cuda()
 net.apply(weightInitialization)

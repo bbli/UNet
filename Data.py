@@ -107,34 +107,30 @@ def Padder(factor):
         return util.pad(image,factor,mode='constant',constant_values=0) 
     return f
 
+################### **Creating Dataset** #########################
+train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+
+
+center = Standarize()
+pad = Padder(100)
+transforms = Compose([center,pad])
+# transforms = Compose ([ToTensor(),Standarize(0,1)])
 ##########################################################
+train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+train_dataset.fit([center])
+checkTrainSetMean(train_dataset)
+
+test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+################### **Export Variables** #########################
+train_loader = DataLoader(train_dataset,shuffle=True)
+test_loader = DataLoader(test_dataset,shuffle=True)
+
+
 if __name__=='__main__':
-    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
-    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
-
-    #### Defining transform and Dataset class######
-    center = Standarize()
-    pad = Padder(100)
-    transforms = Compose([center,pad])
-
-    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,factor=4,transform=transforms)
-    train_dataset.fit([center])
-    checkTrainSetMean(train_dataset)
-    ##########################################################
-
-    train_set = DataLoader(train_dataset,shuffle=True)
-
-    img,label = next(iter(train_set))
+    img,label = next(iter(train_loader))
     # size = 700
     # img = torch.Tensor(1,1,size,size)
     # make into pytorch cuda variables
-    img = tensor_format(img)
-    label = tensor_format(label)
-
-    model = UNet().cuda()
-    model.apply(weightInitialization)
-
-    z = model(img)
-    print("Dimension of output of Unet: "+str(z.shape))
-    z,label = crop(z,label)
-    print("Accuracy", score(z,label))
