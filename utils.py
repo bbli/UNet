@@ -5,6 +5,7 @@ from sys import getsizeof
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
+import torch
 
 def code(function):
     print(getsource(function))
@@ -87,7 +88,7 @@ def showComparsion(output,label):
     plt.title("Prediction")
     plt.subplot(1,2,2)
     plt.imshow(label)
-    plt.title("Title")
+    plt.title("Label")
     plt.show()
 
 def reduceTo2D(outputs,labels):
@@ -105,4 +106,13 @@ def cyclic(period):
         modulus = episode % period
         return 1/(1+0.05*modulus)
     return f
+
+def imageToTorch(image):
+    new_image = torch.from_numpy(image).float()
+    ## extra dimension for the feature channel
+    new_image = new_image.view(1,*image.shape)
+    return new_image
+
+def labelToTorch(image):
+    return torch.from_numpy(image).long()
 
