@@ -40,7 +40,7 @@ criterion = nn.CrossEntropyLoss(weight=weight_map)
 
 
 optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-scheduler = LambdaLR(optimizer,lr_lambda=cyclic(cyclic_rate))
+scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
 count =0
 for epoch in range(epochs):
