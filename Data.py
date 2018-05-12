@@ -41,15 +41,21 @@ def downsize(images,factor):
         new_tensor = np.concatenate((new_tensor,new_image),axis=0)
     return new_tensor
 
+def fixLabeling(labels):
+    labels[labels==0] = 1
+    return labels-1
+
 class ParhyaleDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=None,transform=None):
+    def __init__(self,image_path,label_path,factor=4,transform=None):
         self.transform = transform
         self.images = stackImages(readImages(image_path))
         self.labels = stackImages(readImages(label_path))
+        self.labels = fixLabeling(self.labels)
         if factor:
             self.images = downsize(self.images,factor)
             self.labels = downsize(self.labels,factor)
-        print(np.mean(self.images[0]))
+        print("Mean pixel value of first image: ", np.mean(self.images[0]))
+        print("Percentage of cells in first image: ", np.mean(self.labels[0]))
     def fit(self,scalers):
         for scaler in scalers:
             scaler.fit(self.images)
