@@ -7,31 +7,34 @@ import torch.nn as nn
 import ipdb
 
 from utils import *
-from FakeData import *
+from Data import *
 from UNet import *
 
 ################### **Creating Dataset** #########################
-train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
-train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
-test_images_path = '/home/bbli/ML_Code/UNet/Data/fake/test_images.npy'
-test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/test_labels.npy'
+train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+
 
 center = Standarize()
 pad = Padder(100)
 transforms = Compose([center,pad])
 # transforms = Compose ([ToTensor(),Standarize(0,1)])
 ##########################################################
-train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
+train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
 train_dataset.fit([center])
 checkTrainSetMean(train_dataset)
 
 train_loader = DataLoader(train_dataset,shuffle=True)
 ##########################################################
-test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
+test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
 test_loader = DataLoader(test_dataset,shuffle=True)
 ##########################################################
+kernel_size=6
+feature_maps=32
 
-net = UNet().cuda()
+net = UNet(kernel_size,feature_maps).cuda()
 net.apply(weightInitialization)
 net.train()
 
@@ -41,11 +44,14 @@ cyclic_rate = 25
 epochs = 50
 alpha = 0.06
 weight_map = getWeightMap(train_loader)
+print("Weight Map: ", weight_map)
 # weight_map = np.array([alpha,1-alpha])
 training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
+model_parameters = "Kernel Size: {} Initial Feature Maps: {}".format(kernel_size,feature_maps)
 
 w = SummaryWriter()
 w.add_text('Training Parameters',training_parameters)
+w.add_text('Model Parameters',model_parameters)
 
 # ipdb.set_trace()
 # weight_map = np.array([0.01,0.99])
@@ -101,6 +107,6 @@ for img, label in test_loader:
     output, label = crop(output,label)
     test_score = score(output,label)
     print("Test score: {}".format(test_score))
-    showComparsion(output,label)
+    output, label = reduceTo2D(output,label)
 w.add_text("Test score","Test score: "+str(test_score))
 w.close()
