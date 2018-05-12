@@ -86,6 +86,7 @@ class UNet(nn.Module):
         self.final = nn.Conv2d(self.feature,2,1)
 
     def forward(self,x):
+        # print(x.shape)
         d1= self.encode1(x)
 
         d2= self.maxpool(d1)

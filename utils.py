@@ -73,7 +73,7 @@ def getWeightMap(dataloader):
     for img,label in dataloader:
         label = label.numpy()
         total_mean += label.mean()
-        print(label.mean())
+        print("Label percentage: ",label.mean())
     total_mean = total_mean/len(dataloader)
     return np.array([total_mean,1-total_mean])
 
@@ -90,6 +90,7 @@ def showComparsion(output,label):
     plt.imshow(label)
     plt.title("Label")
     plt.show()
+    # print("Call plt.show() to see prediction")
 
 def reduceTo2D(outputs,labels):
     outputs = outputs.cpu().data.numpy()
