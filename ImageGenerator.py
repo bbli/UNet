@@ -47,8 +47,8 @@ if __name__ == '__main__':
     
     num_train = 11
     num_test =1
-    radius = 25
-    num_circles = 20
+    radius = 17
+    num_circles = 15
     train_labels = RandomImage(num_circles,radius)
     train_labels = train_labels.reshape(1,*train_labels.shape)
     for _ in range(num_train-1):

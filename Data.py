@@ -8,10 +8,11 @@ import os
 import numpy as np
 from skimage.transform import downscale_local_mean
 from sklearn.preprocessing import StandardScaler
-from functools import partial
+import skimage.util as util
 import ipdb
 
 from utils import *
+from UNet import *
     
 ##########################################################
 def readImages(path):
@@ -39,12 +40,15 @@ def downsize(images,factor):
         # ipdb.set_trace()
         new_tensor = np.concatenate((new_tensor,new_image),axis=0)
     return new_tensor
+
 class ParhyaleDataset(Dataset):
-    def __init__(self,path,factor=None,transform=None):
+    def __init__(self,image_path,label_path,factor=None,transform=None):
         self.transform = transform
-        self.images = stackImages(readImages(path))
+        self.images = stackImages(readImages(image_path))
+        self.labels = stackImages(readImages(label_path))
         if factor:
             self.images = downsize(self.images,factor)
+            self.labels = downsize(self.labels,factor)
         print(np.mean(self.images[0]))
     def fit(self,scalers):
         for scaler in scalers:
@@ -53,18 +57,12 @@ class ParhyaleDataset(Dataset):
         return len(self.images)
     def __getitem__(self,index):
         image = self.images[index]
+        label = self.labels[index]
         if self.transform:
-            return self.transform(image)
+            return imageToTorch(self.transform(image)),labelToTorch(label)
         else:
-            return image
+            return imageToTorch(image), labelToTorch(label)
 ######################################################
-
-def toTorch(image):
-    down_size,_ = image.shape
-    new_image = torch.from_numpy(image).float()
-    new_image = new_image.view(1,down_size,down_size)
-    return new_image
-
 ## wrapper so StandardScaler will work inside a Pytorch Compose
 #images is a 3D Tensor
 # class Standarize():
@@ -92,25 +90,45 @@ class Standarize(StandardScaler):
         image=self.transform(image)
         return image.reshape(shape,shape)
     def fit(self,images):
-        ## reshape
+        ## reshape so we can average images across samples for
+        ## each spatial location
         length = len(images)
         images = images.reshape(length,-1)
         super().fit(images)
 
+def Padder(factor):
+    def f(image):
+        return util.pad(image,factor,mode='constant',constant_values=0) 
+    return f
+
 ##########################################################
 if __name__=='__main__':
-    path = '/data/bbli/gryllus_disk_images/'
+    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
 
+    #### Defining transform and Dataset class######
     center = Standarize()
-    transforms = Compose([center,toTorch ])
-    # transforms = Compose ([ToTensor(),Standarize(0,1)])
+    pad = Padder(100)
+    transforms = Compose([center,pad])
 
-    dataset = ParhyaleDataset(path,factor=4,transform=transforms)
-    dataset.fit([center])
+    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,factor=4,transform=transforms)
+    train_dataset.fit([center])
+    checkTrainSetMean(train_dataset)
+    ##########################################################
 
-    train_set = DataLoader(dataset,shuffle=True)
-    count =0
-    for i,_ in enumerate(dataset):
-        a = np.mean(dataset[i].numpy())
-        print(a)
-        count += a 
+    train_set = DataLoader(train_dataset,shuffle=True)
+
+    img,label = next(iter(train_set))
+    # size = 700
+    # img = torch.Tensor(1,1,size,size)
+    # make into pytorch cuda variables
+    img = tensor_format(img)
+    label = tensor_format(label)
+
+    model = UNet().cuda()
+    model.apply(weightInitialization)
+
+    z = model(img)
+    print("Dimension of output of Unet: "+str(z.shape))
+    z,label = crop(z,label)
+    print("Accuracy", score(z,label))

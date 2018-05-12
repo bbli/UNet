@@ -41,7 +41,7 @@ cyclic_rate = 25
 epochs = 50
 alpha = 0.06
 weight_map = getWeightMap(train_loader)
-weight_map = np.array([alpha,1-alpha])
+# weight_map = np.array([alpha,1-alpha])
 training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
 
 w = SummaryWriter()
@@ -93,12 +93,14 @@ for epoch in range(epochs):
         # relDiff_dict = listToDict(relDiff_list)
         # w.add_scalars('LayerChanges',relDiff_dict,count)
 
-w.close()
 
 net.eval()
 for img, label in test_loader:
     img, label = tensor_format(img), tensor_format(label)
     output = net(img)
     output, label = crop(output,label)
-    print("Test score: {}".format(score(output,label)))
+    test_score = score(output,label)
+    print("Test score: {}".format(test_score))
     showComparsion(output,label)
+w.add_text("Test score","Test score: "+str(test_score))
+w.close()
