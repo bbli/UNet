@@ -9,6 +9,7 @@ import ipdb
 from utils import *
 from Data import *
 from UNet import *
+
 def learningRateFinder(net,max_learn_rate):
     weight_map = getWeightMap(train_loader)
     print("Weight Map: ", weight_map)
@@ -46,6 +47,7 @@ def learningRateFinder(net,max_learn_rate):
     plt.plot(lr_list)
     plt.title("Learning Rate")
     plt.show()
+    return loss_list,lr_list
 
 if __name__ == '__main__':
     kernel_size=6
@@ -54,4 +56,4 @@ if __name__ == '__main__':
     net = UNet(kernel_size,feature_maps).cuda()
     net.apply(weightInitialization)
     net.train()
-    learningRateFinder(net,1)
+    loss_list,lr_list = learningRateFinder(net,1)
