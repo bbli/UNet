@@ -13,15 +13,15 @@ from UNet import *
 def trainModel(ks,fm,lr,w):
     kernel_size = ks
     feature_maps = fm
+    learn_rate = lr
+    momentum_rate = 0.8
+    cyclic_rate = 25
+    epochs = 50
 
     net = UNet(kernel_size,feature_maps).cuda()
     net.apply(weightInitialization)
     net.train()
 
-    learn_rate = lr
-    momentum_rate = 0.8
-    cyclic_rate = 25
-    epochs = 50
     # alpha = 0.06
     # weight_map = np.array([alpha,1-alpha])
     weight_map = getWeightMap(train_loader)
@@ -31,9 +31,6 @@ def trainModel(ks,fm,lr,w):
 
     w.add_text('Training Parameters',training_parameters)
     w.add_text('Model Parameters',model_parameters)
-
-    # ipdb.set_trace()
-    # weight_map = np.array([0.01,0.99])
 
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     criterion = nn.CrossEntropyLoss(weight=weight_map)
@@ -46,37 +43,25 @@ def trainModel(ks,fm,lr,w):
     for epoch in range(epochs):
         for idx,(img,label) in enumerate(train_loader):
             count += 1
-            ################### **Training the Network** #########################
+            ################### **Feed Foward** #########################
             img, label = tensor_format(img), tensor_format(label)
-            # learn_rate = next(lr_generator)
 
-            ########## Create NEW one after every ITERATION for WEIGHT MAP
-            # optimizer = optim.SGD(net.parameters(),lr=learn_rate,momentum=0.90, nesterov=True,weight_decay=1e-4)
-            optimizer.zero_grad()
-            # printModel(net,optimizer)
-            # ipdb.set_trace()
-            # before_weights = weightMag(net)
-            #########################
             output = net(img)
             output, label = crop(output,label)
-            acc = score(output,label)
-            # print(acc)
-            w.add_scalar('Accuracy', float(acc),count)
-            # print("Accuracy: {}".format(acc))
-            #########################
             loss = criterion(output, label)
 
+            ################### **Logging** #########################
             w.add_scalar('Loss', loss.data[0],count)
             # print("Loss value: {}".format(loss))
-            #########################
+
+            acc = score(output,label)
+            w.add_scalar('Accuracy', float(acc),count)
+            # print("Accuracy: {}".format(acc))
+            ################### **Update Back** #########################
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             scheduler.step()
-            ################################################################
-            # after_weights =weightMag(net)
-            # relDiff_list = relDiff(before_weights,after_weights)
-            # relDiff_dict = listToDict(relDiff_list)
-            # w.add_scalars('LayerChanges',relDiff_dict,count)
     return net
 
 def testModel(net,w):
