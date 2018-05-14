@@ -100,17 +100,33 @@ def trainModel(ks,fm,lr,train_loader,w):
 
 def testModel(net,test_loader,w):
     net.eval()
-    for img, label in test_loader:
+    for i,(img,label) in enumerate(test_loader):
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
         test_score = score(output,label)
         output, label = reduceTo2D(output,label)
-    w.add_text("Test score","Test score: "+str(test_score))
+        
+        ################### **Logging** #########################
+        w.add_image("Input",img[0],i)
+        ## These two will be LongTensors, which should be ok since values are either 1 or 0
+        w.add_image("Prediction",logImage(output),i)
+        w.add_image("Label",logImage(label),i)
+        w.add_text("Test score","Test score: "+str(test_score))
     return test_score
 
+def logImage(numpy_array):
+    '''
+    Converts numpy image into a 3D Torch Tensor
+    '''
+    numpy_array = numpy_array.reshape(1,*numpy_array.shape)
+    numpy_array = torch.from_numpy(numpy_array)
+    return numpy_array
+
+
+
 kernel_size_parameters = [7,8,9]
-feature_maps=32
+feature_maps=16
 # learning_parameters = [1.2e-2,8e-3]
 beta_parameters = [0.96,0.99,0.995,0.999]
 run_count = 0
@@ -125,7 +141,7 @@ for i,ks in enumerate(kernel_size_parameters):
 
         run_count += 1
         print("Run :",run_count)
-        print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+        print("Kernel Size: {} Beta Rate: {}".format(ks,lr))
 
         model = trainModel(ks,feature_maps,lr,train_loader,w)
         models_list.append(model)

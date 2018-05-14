@@ -149,12 +149,15 @@ if __name__ == '__main__':
     img = tensor_format(img)
     label = tensor_format(label)
 
-    kernel_size = 7
+    kernel_size = 6
+    feature_maps = 32
     print("Kernel Size", kernel_size)
-    model = UNet(kernel_size,show=True).cuda()
+    print("Initial Feature Maps",feature_maps)
+    model = UNet(kernel_size,feature_maps,show=True).cuda()
     model.apply(weightInitialization)
 
     z = model(img)
     print("Dimension of output of Unet: "+str(z.shape))
     z,label = crop(z,label)
     print("Accuracy", score(z,label))
+    

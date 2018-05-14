@@ -115,7 +115,7 @@ test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
 
 
 center = Standarize()
-pad_size = 100
+pad_size = 120
 pad = Padder(pad_size)
 transforms = Compose([center,pad])
 # transforms = Compose ([ToTensor(),Standarize(0,1)])
