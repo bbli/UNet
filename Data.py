@@ -46,7 +46,7 @@ def fixLabeling(labels):
     return labels-1
 
 class ParhyaleDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=4,transform=None):
+    def __init__(self,image_path,label_path,factor=5,transform=None):
         self.transform = transform
         self.images = stackImages(readImages(image_path))
         self.labels = stackImages(readImages(label_path))
@@ -115,7 +115,8 @@ test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
 
 
 center = Standarize()
-pad = Padder(100)
+pad_size = 100
+pad = Padder(pad_size)
 transforms = Compose([center,pad])
 # transforms = Compose ([ToTensor(),Standarize(0,1)])
 ##########################################################
@@ -131,6 +132,7 @@ test_loader = DataLoader(test_dataset,shuffle=True)
 
 if __name__=='__main__':
     img,label = next(iter(train_loader))
+    print("Pad size: ",pad_size)
     # size = 700
     # img = torch.Tensor(1,1,size,size)
     # make into pytorch cuda variables
