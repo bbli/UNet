@@ -7,16 +7,49 @@ import torch.nn as nn
 import ipdb
 
 from utils import *
-from Data import *
+from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
 
-def trainModel(ks,fm,lr,w):
+
+def dataCreator(ks):
+    lookup_table = np.zeros(20,dtype='int16')
+    lookup_table[6]=100
+    lookup_table[7]=120
+    lookup_table[8]=135
+    lookup_table[9]=155
+    ################### **Creating Dataset** #########################
+    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+    test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+    test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+
+
+    center = Standarize()
+    pad_size = lookup_table[ks]
+    assert pad_size != 0, "You have not initialized the padding for this kernel size"
+    print("Pad size: ",pad_size)
+    pad = Padder(pad_size)
+    transforms = Compose([center,pad])
+    # transforms = Compose ([ToTensor(),Standarize(0,1)])
+    ##########################################################
+    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    train_dataset.fit([center])
+    checkTrainSetMean(train_dataset)
+
+    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    ################### **Export Variables** #########################
+    train_loader = DataLoader(train_dataset,shuffle=True)
+    test_loader = DataLoader(test_dataset,shuffle=True)
+    return train_loader,test_loader
+
+def trainModel(ks,fm,lr,train_loader,w):
+
     kernel_size = ks
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.8
-    cyclic_rate = 25
-    epochs = 50
+    cyclic_rate = 60
+    epochs = 52
 
     net = UNet(kernel_size,feature_maps).cuda()
     net.apply(weightInitialization)
@@ -25,8 +58,8 @@ def trainModel(ks,fm,lr,w):
     # alpha = 0.06
     # weight_map = np.array([alpha,1-alpha])
     weight_map = getWeightMap(train_loader)
-    print("Weight Map: ", weight_map)
-    training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
+    # print("Weight Map: ", weight_map)
+    training_parameters = "SGD Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
     model_parameters = "Kernel Size: {} Initial Feature Maps: {}".format(kernel_size,feature_maps)
 
     w.add_text('Training Parameters',training_parameters)
@@ -64,36 +97,40 @@ def trainModel(ks,fm,lr,w):
             scheduler.step()
     return net
 
-def testModel(net,w):
+def testModel(net,test_loader,w):
     net.eval()
     for img, label in test_loader:
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
         test_score = score(output,label)
-        print("Test score: {}".format(test_score))
         output, label = reduceTo2D(output,label)
     w.add_text("Test score","Test score: "+str(test_score))
     return test_score
 
-kernel_size_parameters = [4,5,6,7,8]
-feature_maps=16
-learning_parameters = [8e-3,4e-3,1e-3,3e-4]
+kernel_size_parameters = [7,8,9]
+feature_maps=32
+learning_parameters = [1.2e-2,8e-3,6e-3]
 run_count = 0
 models_list =[]
 test_score_list = []
 best_percentage =0
 
 for i,ks in enumerate(kernel_size_parameters):
+    train_loader,test_loader = dataCreator(ks)
     for j,lr in enumerate(learning_parameters):
         w = SummaryWriter()
 
         run_count += 1
-        model = trainModel(ks,feature_maps,lr,w)
-        models_list.append(model,w)
+        print("Run :",run_count)
+        print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
 
-        test_score = testModel(model)
+        model = trainModel(ks,feature_maps,lr,train_loader,w)
+        models_list.append(model)
+
+        test_score = testModel(model,test_loader,w)
         test_score_list.append(test_score)
+        print("Test score: ",str(test_score))
 
         if test_score>best_percentage:
             best_model = model

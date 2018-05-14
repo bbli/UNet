@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 import torch
+from numpy import cos,pi
 
 def code(function):
     print(getsource(function))
@@ -51,7 +52,7 @@ def crop(outputs,labels):
     diff = x-y
     index = abs(diff)
     if diff<0:
-        return outputs, labels[0,index:,index:]
+        return outputs, labels[:,index:,index:]
     elif diff>0:
         return outputs[:,:,index:,index:], labels
     else:
@@ -73,7 +74,7 @@ def getWeightMap(dataloader):
     for img,label in dataloader:
         label = label.numpy()
         total_mean += label.mean()
-        print("Label percentage: ",label.mean())
+        # print("Label percentage: ",label.mean())
     total_mean = total_mean/len(dataloader)
     return np.array([total_mean,1-total_mean])
 

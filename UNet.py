@@ -57,12 +57,13 @@ class UpSample(nn.Module):
             
 
 class UNet(nn.Module):
-    def __init__(self,kernel_size=6,feature_maps=4):
+    def __init__(self,kernel_size=6,feature_maps=4,show=False):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
         self.feature= feature_maps
         self.maxpool = nn.MaxPool2d(2)
+        self.show = show
 
         self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1')
         self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2')
@@ -86,7 +87,8 @@ class UNet(nn.Module):
         self.final = nn.Conv2d(self.feature,2,1)
 
     def forward(self,x):
-        # print(x.shape)
+        if self.show:
+            print(x.shape)
         d1= self.encode1(x)
 
         d2= self.maxpool(d1)
@@ -112,7 +114,8 @@ class UNet(nn.Module):
         u1 = self.decode1(u1)
 
         u1 = self.final(u1)
-        # print(u1.shape)
+        if self.show:
+            print(u1.shape)
         return F.softmax(u1,dim=1)
 
 def crop_and_concat(upsampled, bypass):
@@ -146,7 +149,9 @@ if __name__ == '__main__':
     img = tensor_format(img)
     label = tensor_format(label)
 
-    model = UNet().cuda()
+    kernel_size = 7
+    print("Kernel Size", kernel_size)
+    model = UNet(kernel_size,show=True).cuda()
     model.apply(weightInitialization)
 
     z = model(img)
