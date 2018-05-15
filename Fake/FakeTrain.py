@@ -31,7 +31,7 @@ test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transform
 test_loader = DataLoader(test_dataset,shuffle=True)
 ##########################################################
 
-net = UNet().cuda()
+net = UNet().cuda(1)
 net.apply(weightInitialization)
 net.train()
 

@@ -51,7 +51,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     cyclic_rate = 80
     epochs = 62
 
-    net = UNet(kernel_size,feature_maps).cuda()
+    net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
     net.train()
 

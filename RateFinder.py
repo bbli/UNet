@@ -53,7 +53,7 @@ if __name__ == '__main__':
     kernel_size=6
     feature_maps=16
 
-    net = UNet(kernel_size,feature_maps).cuda()
+    net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
     net.train()
     loss_list,lr_list = learningRateFinder(net,1)

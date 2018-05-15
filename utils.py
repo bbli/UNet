@@ -13,7 +13,7 @@ def code(function):
 
 ## Training Functions
 def tensor_format(tensor):
-        new_tensor = Variable(tensor,requires_grad=False).cuda()
+        new_tensor = Variable(tensor,requires_grad=False).cuda(1)
         return new_tensor
 
 import seaborn as sns

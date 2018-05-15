@@ -149,11 +149,11 @@ if __name__ == '__main__':
     img = tensor_format(img)
     label = tensor_format(label)
 
-    kernel_size = 6
-    feature_maps = 32
+    kernel_size = 5
+    feature_maps = 64
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
-    model = UNet(kernel_size,feature_maps,show=True).cuda()
+    model = UNet(kernel_size,feature_maps,show=True).cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)

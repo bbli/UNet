@@ -114,7 +114,7 @@ if __name__=='__main__':
     img = tensor_format(img)
     label = tensor_format(label)
 
-    model = UNet().cuda()
+    model = UNet().cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)
