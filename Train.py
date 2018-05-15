@@ -5,6 +5,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch import optim
 import torch.nn as nn
 import ipdb
+import scipy.misc
 
 from utils import *
 from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
@@ -13,6 +14,9 @@ from UNet import *
 
 def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
+    lookup_table[3]=45
+    lookup_table[4]=62
+    lookup_table[5]=80
     lookup_table[6]=100
     lookup_table[7]=120
     lookup_table[8]=135
@@ -98,7 +102,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             scheduler.step()
     return net
 
-def testModel(net,test_loader,w):
+def testModel(net,test_loader,w,label):
     net.eval()
     for i,(img,label) in enumerate(test_loader):
         img, label = tensor_format(img), tensor_format(label)
@@ -108,11 +112,12 @@ def testModel(net,test_loader,w):
         output, label = reduceTo2D(output,label)
         
         ################### **Logging** #########################
-        w.add_image("Input",img[0],i)
+        # w.add_image("Input",img[0],i)
         ## These two will be LongTensors, which should be ok since values are either 1 or 0
         w.add_image("Prediction",logImage(output),i)
         w.add_image("Label",logImage(label),i)
         w.add_text("Test score","Test score: "+str(test_score))
+        scipy.misc.imsave("pics/"+str(label)+".tiff",output)
     return test_score
 
 def logImage(numpy_array):
@@ -125,8 +130,8 @@ def logImage(numpy_array):
 
 
 
-kernel_size_parameters = [7,8,9]
-feature_maps=32
+kernel_size_parameters = [3,4,5,6,7]
+feature_maps=64
 learning_parameters = [1.2e-2,1e-2,8e-3]
 # beta_parameters = [0.96,0.99,0.995,0.999]
 run_count = 0
@@ -146,7 +151,7 @@ for i,ks in enumerate(kernel_size_parameters):
         model = trainModel(ks,feature_maps,lr,train_loader,w)
         models_list.append(model)
 
-        test_score = testModel(model,test_loader,w)
+        test_score = testModel(model,test_loader,w,str(i)+str(j))
         test_score_list.append(test_score)
         print("Test score: ",str(test_score))
 
