@@ -48,8 +48,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.8
-    cyclic_rate = 60
-    epochs = 52
+    cyclic_rate = 80
+    epochs = 62
 
     net = UNet(kernel_size,feature_maps).cuda()
     net.apply(weightInitialization)
@@ -59,7 +59,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     # weight_map = np.array([alpha,1-alpha])
     weight_map = getWeightMap(train_loader)
     # print("Weight Map: ", weight_map)
-    training_parameters = "Adam Beta Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
+    training_parameters = "SGD Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
     model_parameters = "Kernel Size: {} Initial Feature Maps: {}".format(kernel_size,feature_maps)
 
     w.add_text('Training Parameters',training_parameters)
@@ -69,8 +69,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     criterion = nn.CrossEntropyLoss(weight=weight_map)
 
 
-    # optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    optimizer = optim.Adam(net.parameters(),lr = 0.01,betas=(0.9,learn_rate))
+    optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
+    # optimizer = optim.Adam(net.parameters(),lr = 0.01,betas=(0.9,learn_rate))
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -126,9 +126,9 @@ def logImage(numpy_array):
 
 
 kernel_size_parameters = [7,8,9]
-feature_maps=16
-# learning_parameters = [1.2e-2,8e-3]
-beta_parameters = [0.96,0.99,0.995,0.999]
+feature_maps=32
+learning_parameters = [1.2e-2,1e-2,8e-3]
+# beta_parameters = [0.96,0.99,0.995,0.999]
 run_count = 0
 models_list =[]
 test_score_list = []
@@ -136,12 +136,12 @@ best_percentage =0
 
 for i,ks in enumerate(kernel_size_parameters):
     train_loader,test_loader = dataCreator(ks)
-    for j,lr in enumerate(beta_parameters):
+    for j,lr in enumerate(learning_parameters):
         w = SummaryWriter()
 
         run_count += 1
         print("Run :",run_count)
-        print("Kernel Size: {} Beta Rate: {}".format(ks,lr))
+        print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
 
         model = trainModel(ks,feature_maps,lr,train_loader,w)
         models_list.append(model)
