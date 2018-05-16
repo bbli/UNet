@@ -24,28 +24,33 @@ from skimage import img_as_float
 
 
 class Convolve(nn.Module):
-    def __init__(self,in_channels,out_channels,kernel_size,string):
+    def __init__(self,in_channels,out_channels,kernel_size,string,show=False):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels,out_channels,kernel_size=kernel_size)
         self.conv2 = nn.Conv2d(out_channels,out_channels,kernel_size=kernel_size)
         self.string = string
+        self.show = show
     def forward(self,x):
-        # print("{} size before convolve: {}".format(self.string, x.shape))
+        if self.show:
+            print("{} size before convolve: {}".format(self.string, x.shape))
 
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
 
-        # print("{} size after convolve: {}".format(self.string, x.shape))
+        if self.show:
+            print("{} size after convolve: {}".format(self.string, x.shape))
         return x
 
 class UpSample(nn.Module):
-    def __init__(self,in_channels,out_channels,kernel_size):
+    def __init__(self,in_channels,out_channels,kernel_size,show=False):
         super().__init__()
         self.up = nn.ConvTranspose2d(in_channels,out_channels,kernel_size=kernel_size,stride=2)
+        self.show = show
         # self.up = nn.Upsample(scale_factor=2)
     def forward(self,x):
         x = self.up(x)
-        # print(x.shape)
+        if self.show:
+             print(x.shape)
         return x
 
 # class LossFunction(Function):
@@ -63,19 +68,18 @@ class UNet(nn.Module):
         self.kernel_size=kernel_size
         self.feature= feature_maps
         self.maxpool = nn.MaxPool2d(2)
-        self.show = show
 
-        self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1')
-        self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2')
-        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3')
-        self.encode4 = Convolve(self.feature*4,self.feature*8,self.kernel_size,'d4')
+        self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1',show)
+        self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2',show)
+        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
+        self.encode4 = Convolve(self.feature*4,self.feature*8,self.kernel_size,'d4',show)
 
-        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c')
+        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c',show)
 
-        self.decode4 = Convolve(self.feature*16,self.feature*8,self.kernel_size,'u4')
-        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3')
-        self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2')
-        self.decode1 = Convolve(self.feature*2,self.feature,self.kernel_size,'u1')
+        self.decode4 = Convolve(self.feature*16,self.feature*8,self.kernel_size,'u4',show)
+        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
+        self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2',show)
+        self.decode1 = Convolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
 
 
         self.up4 = UpSample(self.feature*16,self.feature*8,self.kernel_size)
@@ -87,8 +91,6 @@ class UNet(nn.Module):
         self.final = nn.Conv2d(self.feature,2,1)
 
     def forward(self,x):
-        if self.show:
-            print(x.shape)
         d1= self.encode1(x)
 
         d2= self.maxpool(d1)
@@ -114,8 +116,6 @@ class UNet(nn.Module):
         u1 = self.decode1(u1)
 
         u1 = self.final(u1)
-        if self.show:
-            print(u1.shape)
         return F.softmax(u1,dim=1)
 
 def crop_and_concat(upsampled, bypass):
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     feature_maps = 64
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
-    model = UNet(kernel_size,feature_maps,show=True).cuda(1)
+    model = UNet(kernel_size,feature_maps,show=False).cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)
