@@ -14,6 +14,16 @@ from UNet import *
 
 def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
+    ## 3 Layers
+    # lookup_table[3]=45
+    # lookup_table[4]=62
+    # lookup_table[5]=80
+    # lookup_table[6]=100
+    # lookup_table[7]=120
+    # lookup_table[8]=135
+    # lookup_table[9]=155
+
+    ## 4 Layers
     lookup_table[3]=45
     lookup_table[4]=62
     lookup_table[5]=80

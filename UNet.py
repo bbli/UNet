@@ -60,9 +60,61 @@ class UpSample(nn.Module):
 
     # def backward(self,x):
             
+class ThreeLayerUNet(nn.Module):
+    def __init__(self,kernel_size,feature_maps,show=False):
+        super().__init__()
+        # note weights are being initalized randomly at the moment
+        self.kernel_size=kernel_size
+        self.feature= feature_maps
+        self.maxpool = nn.MaxPool2d(2)
 
-class UNet(nn.Module):
-    def __init__(self,kernel_size=6,feature_maps=4,show=False):
+        self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1',show)
+        self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2',show)
+        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
+
+        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c',show)
+
+        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
+        self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2',show)
+        self.decode1 = Convolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
+
+
+        self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
+        self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
+        self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
+
+        # output channel is 1 b/c we have grayscale
+        self.final = nn.Conv2d(self.feature,2,1)
+
+    def forward(self,x):
+        d1= self.encode1(x)
+
+        d2= self.maxpool(d1)
+        d2= self.encode2(d2)
+
+        d3 = self.maxpool(d2)
+        d3 = self.encode3(d3)
+
+        c = self.maxpool(d3)
+        c = self.center(c)
+
+        u3 = self.up3(c)
+        u3 = crop_and_concat(u3,d3)
+        u3 = self.decode3(u3)
+
+        u2 = self.up2(u3)
+        u2 = crop_and_concat(u2,d2)
+        u2 = self.decode2(u2)
+
+        u1 = self.up1(u2)
+        u1 = crop_and_concat(u1,d1)
+        u1 = self.decode1(u1)
+
+        u1 = self.final(u1)
+        return F.softmax(u1,dim=1)
+
+class FourLayerUNet(nn.Module):
+    def __init__(self,kernel_size,feature_maps,show=False):
         super().__init__()
         # note weights are being initalized randomly at the moment
         self.kernel_size=kernel_size
@@ -74,7 +126,7 @@ class UNet(nn.Module):
         self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
         self.encode4 = Convolve(self.feature*4,self.feature*8,self.kernel_size,'d4',show)
 
-        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c',show)
+        self.center = Convolve(self.feature*8,self.feature*16,self.kernel_size,'c',show)
 
         self.decode4 = Convolve(self.feature*16,self.feature*8,self.kernel_size,'u4',show)
         self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
@@ -99,11 +151,18 @@ class UNet(nn.Module):
         d3 = self.maxpool(d2)
         d3 = self.encode3(d3)
 
-        c = self.maxpool(d3)
+        d4 = self.maxpool(d3)
+        d4 = self.encode4(d4)
+
+        c = self.maxpool(d4)
         c = self.center(c)
 
-        u3 = self.up3(c)
+        u4 = self.up4(c)
+        u4 = crop_and_concat(u4,d4)
+        u4 = self.decode4(u4)
         # ipdb.set_trace()
+
+        u3 = self.up3(u4)
         u3 = crop_and_concat(u3,d3)
         u3 = self.decode3(u3)
 
@@ -149,11 +208,12 @@ if __name__ == '__main__':
     img = tensor_format(img)
     label = tensor_format(label)
 
-    kernel_size = 5
-    feature_maps = 64
+    kernel_size = 7
+    feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
-    model = UNet(kernel_size,feature_maps,show=False).cuda(1)
+    # model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
+    model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)

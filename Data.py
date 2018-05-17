@@ -46,7 +46,7 @@ def fixLabeling(labels):
     return labels-1
 
 class ParhyaleDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=10,transform=None):
+    def __init__(self,image_path,label_path,factor=5,transform=None):
         self.transform = transform
         self.images = stackImages(readImages(image_path))
         self.labels = stackImages(readImages(label_path))
@@ -115,7 +115,7 @@ test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
 
 
 center = Standarize()
-pad_size = 80
+pad_size = 160
 pad = Padder(pad_size)
 transforms = Compose([center,pad])
 # transforms = Compose ([ToTensor(),Standarize(0,1)])
