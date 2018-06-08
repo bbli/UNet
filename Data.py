@@ -7,8 +7,6 @@ from skimage import img_as_float
 import os
 import numpy as np
 from skimage.transform import downscale_local_mean
-from sklearn.preprocessing import StandardScaler
-import skimage.util as util
 import ipdb
 
 from utils import *
@@ -85,27 +83,6 @@ class ParhyaleDataset(Dataset):
         # length = len(images)
         # images = images.reshape(length,-1)
         # self.scaler.fit(images)
-class Standarize(StandardScaler):
-    def __init__(self,with_std=False):
-        ## No need to pass self b/c this is call time
-        super().__init__(with_std=False)
-    def __call__(self,image):
-        ## rescale
-        shape = image.shape[-1]
-        image = image.reshape(1,shape*shape)
-        image=self.transform(image)
-        return image.reshape(shape,shape)
-    def fit(self,images):
-        ## reshape so we can average images across samples for
-        ## each spatial location
-        length = len(images)
-        images = images.reshape(length,-1)
-        super().fit(images)
-
-def Padder(factor):
-    def f(image):
-        return util.pad(image,factor,mode='constant',constant_values=0) 
-    return f
 
 ################### **Creating Dataset** #########################
 train_images_path = '/data/bbli/gryllus_disk_images/train/images/'

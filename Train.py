@@ -124,7 +124,7 @@ def testModel(net,test_loader,w,label):
         ################### **Logging** #########################
         # w.add_image("Input",img[0],i)
         ## These two will be LongTensors, which should be ok since values are either 1 or 0
-        w.add_image("Prediction",logImage(output),i)
+        w.add_image("Segmentation",logImage(output),i)
         w.add_image("Label",logImage(label),i)
         w.add_text("Test score","Test score: "+str(test_score))
         scipy.misc.imsave("pics/"+str(label)+".tiff",output)
