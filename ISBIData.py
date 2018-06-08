@@ -53,13 +53,13 @@ class ISBIDataset(Dataset):
             scaler.fit(self.images)
 ##########################################################
 
-if __name__ == '__main__':
-    path = '/home/bbli/ML_Code/UNet/Data/'
-    center = Standarize()
-    pad_size = 160
-    pad = Padder(pad_size)
-    transforms = Compose([center,pad])
+path = '/home/bbli/ML_Code/UNet/Data/'
+center = Standarize()
+pad_size = 88 ##assuming kernel =3 and padder applies this to both sides(which it does)
+pad = Padder(pad_size)
+transforms = Compose([center,pad])
 
-    dataset = ISBIDataset(path,transforms)
-    dataset.fit([center])
-    checkTrainSetMean(dataset)
+dataset = ISBIDataset(path,transforms)
+dataset.fit([center])
+checkTrainSetMean(dataset)
+train_loader = DataLoader(dataset,shuffle=True)

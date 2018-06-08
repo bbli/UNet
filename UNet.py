@@ -204,11 +204,13 @@ def weightInitialization(m):
         # change_count +=1
 
 if __name__ == '__main__':
-    img,label = next(iter(train_loader))
+    # img,label = next(iter(train_loader))
+    size = 688
+    img = torch.Tensor(1,1,size,size)
     img = tensor_format(img)
-    label = tensor_format(label)
+    # label = tensor_format(label)
 
-    kernel_size = 7
+    kernel_size = 3
     feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
@@ -218,6 +220,6 @@ if __name__ == '__main__':
 
     z = model(img)
     print("Dimension of output of Unet: "+str(z.shape))
-    z,label = crop(z,label)
-    print("Accuracy", score(z,label))
+    # z,label = crop(z,label)
+    # print("Accuracy", score(z,label))
     
