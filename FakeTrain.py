@@ -31,7 +31,7 @@ test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transform
 test_loader = DataLoader(test_dataset,shuffle=True)
 ##########################################################
 
-net = UNet().cuda(1)
+net = UNet(6,32).cuda(1)
 net.apply(weightInitialization)
 net.train()
 
@@ -44,6 +44,7 @@ weight_map = getWeightMap(train_loader)
 # weight_map = np.array([alpha,1-alpha])
 training_parameters = "Learning Rate: {} \n Momentum: {} \n Cycle Length: {} \n Number of epochs: {}\n Weight Map: {}".format(learn_rate,momentum_rate,cyclic_rate, epochs, weight_map)
 
+os.chdir("Fake")
 w = SummaryWriter()
 w.add_text('Training Parameters',training_parameters)
 
