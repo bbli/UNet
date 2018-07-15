@@ -6,6 +6,7 @@ from torch import optim
 import torch.nn as nn
 import ipdb
 import scipy.misc
+import os
 
 from utils import *
 from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
@@ -63,7 +64,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.8
     cyclic_rate = 80
-    epochs = 62
+    epochs = 1
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -112,7 +113,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             scheduler.step()
     return net
 
-def testModel(net,test_loader,w,label):
+def testModel(net,test_loader,w):
     net.eval()
     for i,(img,label) in enumerate(test_loader):
         img, label = tensor_format(img), tensor_format(label)
@@ -127,7 +128,7 @@ def testModel(net,test_loader,w,label):
         w.add_image("Segmentation",logImage(output),i)
         w.add_image("Label",logImage(label),i)
         w.add_text("Test score","Test score: "+str(test_score))
-        scipy.misc.imsave("pics/"+str(label)+".tiff",output)
+        # scipy.misc.imsave("pics/"+str(label)+".tiff",output)
     return test_score
 
 def logImage(numpy_array):
@@ -140,34 +141,18 @@ def logImage(numpy_array):
 
 
 
-kernel_size_parameters = [3,4,5,6,7]
-feature_maps=64
-learning_parameters = [1.2e-2,1e-2,8e-3]
-# beta_parameters = [0.96,0.99,0.995,0.999]
-run_count = 0
-models_list =[]
-test_score_list = []
-best_percentage =0
+feature_maps=32
+ks = 5
+lr = 8e-3
+# os.chdir('one_train_image')
+os.chdir('debug')
 
-for i,ks in enumerate(kernel_size_parameters):
-    train_loader,test_loader = dataCreator(ks)
-    for j,lr in enumerate(learning_parameters):
-        w = SummaryWriter()
+train_loader,test_loader = dataCreator(ks)
+w = SummaryWriter()
+print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+model = trainModel(ks,feature_maps,lr,train_loader,w)
+test_score = testModel(model,test_loader,w)
+print("Test score: ",str(test_score))
 
-        run_count += 1
-        print("Run :",run_count)
-        print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-
-        model = trainModel(ks,feature_maps,lr,train_loader,w)
-        models_list.append(model)
-
-        test_score = testModel(model,test_loader,w,str(i)+str(j))
-        test_score_list.append(test_score)
-        print("Test score: ",str(test_score))
-
-        if test_score>best_percentage:
-            best_model = model
-            best_percentage = test_score
-
-        w.close()
-torch.save(best_model.state_dict(),'best_model.pt')
+w.close()
+# torch.save(best_model.state_dict(),'best_model.pt')

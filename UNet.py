@@ -60,7 +60,7 @@ class UpSample(nn.Module):
 
     # def backward(self,x):
             
-class ThreeLayerUNet(nn.Module):
+class UNet(nn.Module):
     def __init__(self,kernel_size,feature_maps,show=False):
         super().__init__()
         # note weights are being initalized randomly at the moment
