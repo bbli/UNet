@@ -52,7 +52,7 @@ class ParhyaleDataset(Dataset):
         if factor:
             self.images = downsize(self.images,factor)
             self.labels = downsize(self.labels,factor)
-        print("Mean pixel value of first image: ", np.mean(self.images[0]))
+        print("Mean pixel value-before transforms: ", np.mean(self.images[0]))
         print("Percentage of cells in first image: ", np.mean(self.labels[0]))
     def fit(self,scalers):
         for scaler in scalers:

@@ -68,7 +68,7 @@ def checkTrainSetMean(train_dataset):
     for i,_ in enumerate(train_dataset):
         a = np.mean(train_dataset[i][0].numpy())
         mean += a 
-    print("Mean pixel value: {}".format(mean))
+    print("Mean pixel value-after transforms: {}".format(mean))
 
 
 def getWeightMap(dataloader):
