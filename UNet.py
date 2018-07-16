@@ -27,15 +27,22 @@ class Convolve(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size,string,show=False):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels,out_channels,kernel_size=kernel_size)
+        self.batch1 = nn.BatchNorm2d(out_channels)
         self.conv2 = nn.Conv2d(out_channels,out_channels,kernel_size=kernel_size)
+        self.batch2 = nn.BatchNorm2d(out_channels)
         self.string = string
         self.show = show
     def forward(self,x):
         if self.show:
             print("{} size before convolve: {}".format(self.string, x.shape))
 
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
+        # x = self.batch1(self.conv1(x))
+        x = self.conv1(x)
+        x = F.relu(x)
+        
+        # x = self.batch2(self.conv2(x))
+        x = self.conv2(x)
+        x = F.relu(x)
 
         if self.show:
             print("{} size after convolve: {}".format(self.string, x.shape))
@@ -133,17 +140,26 @@ def weightInitialization(m):
 
 if __name__ == '__main__':
     # img,label = next(iter(train_loader))
-    size = 688
+    import numpy as np
+    lookup_table = np.zeros(20,dtype='int16')
+    lookup_table[3]=45
+    lookup_table[4]=62
+    lookup_table[5]=80
+    lookup_table[6]=100
+    lookup_table[7]=120
+    lookup_table[8]=137
+    lookup_table[9]=155
+    kernel_size = 8
+    feature_maps = 32
+    print("Kernel Size", kernel_size)
+    print("Initial Feature Maps",feature_maps)
+    size = 400+2*int(lookup_table[kernel_size])
     img = torch.Tensor(1,1,size,size)
     img = tensor_format(img)
     # label = tensor_format(label)
 
-    kernel_size = 3
-    feature_maps = 32
-    print("Kernel Size", kernel_size)
-    print("Initial Feature Maps",feature_maps)
     # model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
-    model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
+    model = UNet(kernel_size,feature_maps,show=True).cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)
