@@ -52,13 +52,6 @@ class UpSample(nn.Module):
         if self.show:
              print(x.shape)
         return x
-
-# class LossFunction(Function):
-    # def __init__(self):
-
-    # def forward(self,x):
-
-    # def backward(self,x):
             
 class UNet(nn.Module):
     def __init__(self,kernel_size,feature_maps,show=False):
@@ -83,7 +76,6 @@ class UNet(nn.Module):
         self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
         self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
-        # output channel is 1 b/c we have grayscale
         self.final = nn.Conv2d(self.feature,2,1)
 
     def forward(self,x):

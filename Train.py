@@ -14,17 +14,8 @@ from UNet import *
 
 
 def dataCreator(ks):
-    lookup_table = {}
+    lookup_table = np.zeros(20,dtype='int16')
     ## 3 Layers
-    # lookup_table[3]=45
-    # lookup_table[4]=62
-    # lookup_table[5]=80
-    # lookup_table[6]=100
-    # lookup_table[7]=120
-    # lookup_table[8]=135
-    # lookup_table[9]=155
-
-    ## 4 Layers
     lookup_table[3]=45
     lookup_table[4]=62
     lookup_table[5]=80
@@ -32,6 +23,15 @@ def dataCreator(ks):
     lookup_table[7]=120
     lookup_table[8]=135
     lookup_table[9]=155
+
+    ## 4 Layers
+    # lookup_table[3]=45
+    # lookup_table[4]=62
+    # lookup_table[5]=80
+    # lookup_table[6]=100
+    # lookup_table[7]=120
+    # lookup_table[8]=135
+    # lookup_table[9]=155
     ################### **Creating Dataset** #########################
     train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
     train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
@@ -41,7 +41,7 @@ def dataCreator(ks):
 
     center = Standarize()
     pad_size = lookup_table[ks]
-    assert pad_size != 0, "You have not initialized the padding for this kernel size"
+    # assert pad_size != 0, "You have not initialized the padding for this kernel size"
     print("Pad size: ",pad_size)
     pad = Padder(pad_size)
     transforms = Compose([center,pad])

@@ -54,7 +54,7 @@ def crop(outputs,labels):
     diff = x-y
     index = abs(diff)
     if diff<0:
-        return outputs, labels[:,index:,index:]
+        raise Exception("output size should be greater than label size")
     elif diff>0:
         return outputs[:,:,index:,index:], labels
     else:
