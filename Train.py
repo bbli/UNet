@@ -14,7 +14,7 @@ from UNet import *
 
 
 def dataCreator(ks):
-    lookup_table = np.zeros(20,dtype='int16')
+    lookup_table = {}
     ## 3 Layers
     # lookup_table[3]=45
     # lookup_table[4]=62
@@ -64,7 +64,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.8
     cyclic_rate = 80
-    epochs = 1
+    epochs = 5
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
