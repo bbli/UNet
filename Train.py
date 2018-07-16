@@ -21,7 +21,7 @@ def dataCreator(ks):
     lookup_table[5]=80
     lookup_table[6]=100
     lookup_table[7]=120
-    lookup_table[8]=135
+    lookup_table[8]=137
     lookup_table[9]=155
 
     ## 4 Layers
@@ -63,8 +63,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.8
-    cyclic_rate = 80
-    epochs = 5
+    cyclic_rate = 22
+    epochs = 60
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -142,10 +142,10 @@ def logImage(numpy_array):
 
 
 feature_maps=32
-ks = 5
-lr = 8e-3
-# os.chdir('one_train_image')
-os.chdir('debug')
+ks = 8
+lr = 1.2e-2
+os.chdir('one_train_image')
+# os.chdir('debug')
 
 train_loader,test_loader = dataCreator(ks)
 w = SummaryWriter()
