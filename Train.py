@@ -22,7 +22,7 @@ def dataCreator(ks):
     lookup_table[6]=100
     lookup_table[7]=120
     lookup_table[8]=137
-    lookup_table[9]=155
+    lookup_table[9]=156
 
     ## 4 Layers
     # lookup_table[3]=45
@@ -63,11 +63,11 @@ def trainModel(ks,fm,lr,train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.8
-    cyclic_rate = 22
-    epochs = 60
+    cyclic_rate = 28
+    epochs = 25
 
     net = UNet(kernel_size,feature_maps).cuda(1)
-    net.apply(weightInitialization)
+    # net.apply(weightInitialization)
     net.train()
 
     # alpha = 0.06
@@ -85,7 +85,7 @@ def trainModel(ks,fm,lr,train_loader,w):
 
 
     optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    # optimizer = optim.Adam(net.parameters(),lr = 0.01,betas=(0.9,learn_rate))
+    # optimizer2 = optim.Adam(net.parameters(),lr = 0.5*learn_rate)
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -97,6 +97,7 @@ def trainModel(ks,fm,lr,train_loader,w):
 
             output = net(img)
             output, label = crop(output,label)
+            logInitialCellProb(output,count,w,g_dict_of_images)
             loss = criterion(output, label)
 
             ################### **Logging** #########################
@@ -107,10 +108,15 @@ def trainModel(ks,fm,lr,train_loader,w):
             w.add_scalar('Accuracy', float(acc),count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
+            # if epoch<45:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             scheduler.step()
+            # else:
+                # optimizer2.zero_grad()
+                # loss.backward()
+                # optimizer2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -119,6 +125,8 @@ def testModel(net,test_loader,w):
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
+        logFinalCellProb(output,w,g_dict_of_images)
+
         test_score = score(output,label)
         output, label = reduceTo2D(output,label)
         
@@ -131,24 +139,17 @@ def testModel(net,test_loader,w):
         # scipy.misc.imsave("pics/"+str(label)+".tiff",output)
     return test_score
 
-def logImage(numpy_array):
-    '''
-    Converts numpy image into a 3D Torch Tensor
-    '''
-    numpy_array = numpy_array.reshape(1,*numpy_array.shape)
-    numpy_array = torch.from_numpy(numpy_array)
-    return numpy_array
-
-
 
 feature_maps=32
 ks = 8
-lr = 1.2e-2
-os.chdir('one_train_image')
-# os.chdir('debug')
+lr = 3e-2
+# os.chdir('one_train_image')
+os.chdir('debug')
 
+g_dict_of_images={}
 train_loader,test_loader = dataCreator(ks)
 w = SummaryWriter()
+w.add_text("Thoughts","Removed my custom weight initalization")
 print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
 model = trainModel(ks,feature_maps,lr,train_loader,w)
 test_score = testModel(model,test_loader,w)
@@ -156,3 +157,11 @@ print("Test score: ",str(test_score))
 
 w.close()
 # torch.save(best_model.state_dict(),'best_model.pt')
+final_cell_prob = g_dict_of_images['Final Cell Prob']
+print(final_cell_prob.mean())
+print(final_cell_prob[100:105,100:105])
+# cell_prob= g_dict_of_images['Inital Cell Prob']
+# seg = cell_prob*(cell_prob>0.5)
+# import matplotlib.pyplot as plt
+# plt.imshow(seg,cmap='gray')
+# plt.grid(b=False)

@@ -44,6 +44,11 @@ def reduceTo2D(outputs,labels):
     outputs = outputs[0]
     return outputs,labels
 
+def getCellProb(torch_tensor):
+    cell_prob = torch_tensor.cpu().data.numpy()
+    cell_prob = cell_prob[0,1,:,:]
+    return cell_prob
+
 def crop(outputs,labels):
     '''
     Will figure out which one is larger and then crop accordingly
@@ -153,3 +158,21 @@ def Padder(factor):
     def f(image):
         return util.pad(image,factor,mode='constant',constant_values=0) 
     return f
+def logImage(numpy_array):
+    '''
+    Converts numpy image into a 3D Torch Tensor
+    '''
+    numpy_array = numpy_array.reshape(1,*numpy_array.shape)
+    numpy_array = torch.from_numpy(numpy_array)
+    return numpy_array
+
+def logInitialCellProb(torch_tensor,count,w,dict_of_images):
+    if count==1:
+        cell_prob = getCellProb(torch_tensor)
+        cell_prob = logImage(cell_prob)
+        w.add_image("Initial Cell Probability",cell_prob,count)
+        dict_of_images["Initial Cell Prob"] = cell_prob
+def logFinalCellProb(torch_tensor,w,dict_of_images):
+    cell_prob = getCellProb(torch_tensor)
+    w.add_image("Final Cell Probability",logImage(cell_prob),1)
+    dict_of_images["Final Cell Prob"] = cell_prob
