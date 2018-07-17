@@ -131,6 +131,13 @@ def cosine(period):
         return 0.5*(1.1+cos(pi*modulus/period))
     return f
 
+def decay_cosine(period):
+    def f(episode):
+        modulus = episode % period
+        cycles = episode//period
+        return 0.5*(1.1+cos(pi*modulus/period))/(cycles+1)
+    return f
+
 def doubler(time_steps):
     def f(episode):
         ratio = episode // time_steps
