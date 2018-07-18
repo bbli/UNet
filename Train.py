@@ -64,10 +64,10 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.8
     cyclic_rate = 31
-    epochs = 60
+    epochs = 3
 
     net = UNet(kernel_size,feature_maps).cuda(1)
-    # net.apply(weightInitialization)
+    net.apply(weightInitialization)
     net.train()
 
     # alpha = 0.06
@@ -106,6 +106,7 @@ def trainModel(ks,fm,lr,train_loader,w):
 
             acc = score(output,label)
             w.add_scalar('Accuracy', float(acc),count)
+            w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
             # if epoch<45:

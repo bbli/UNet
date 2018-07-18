@@ -24,6 +24,17 @@ def hist(image):
     sns.distplot(image)
     plt.show()
 
+def getFrequencyOfDeadNeurons(torch_variable):
+    numpy_matrix = torch_variable.cpu().data.numpy()
+    negative_values = (numpy_matrix<0).sum()
+    total_number_of_values = getProductofTuple(numpy_matrix.shape)
+    return negative_values/total_number_of_values
+
+def getProductofTuple(matrix_shape):
+    prod=1
+    for i in matrix_shape:
+        prod = prod*i
+    return prod
 ##########################################################
 def score(score_variable, labels):
     '''
@@ -32,7 +43,6 @@ def score(score_variable, labels):
     assert score_variable.shape[-1] == labels.shape[-1], "Tensors should have the same spatial dimension"
     cell_prob = getPrediction(score_variable)
     labels = reduceLabelTo2D(labels)
-    ipdb.set_trace()
     boo = (cell_prob== labels)
     return boo.mean()
 
@@ -199,3 +209,4 @@ def Padder(factor):
     def f(image):
         return util.pad(image,factor,mode='constant',constant_values=0) 
     return f
+

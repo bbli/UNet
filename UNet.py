@@ -27,21 +27,40 @@ class Convolve(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size,string,show=False):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels,out_channels,kernel_size=kernel_size)
-        self.batch1 = nn.BatchNorm2d(out_channels)
+        # self.batch1 = nn.BatchNorm2d(out_channels)
         self.conv2 = nn.Conv2d(out_channels,out_channels,kernel_size=kernel_size)
-        self.batch2 = nn.BatchNorm2d(out_channels)
+        # self.batch2 = nn.BatchNorm2d(out_channels)
         self.string = string
         self.show = show
     def forward(self,x):
         if self.show:
             print("{} size before convolve: {}".format(self.string, x.shape))
 
-        # x = self.batch1(self.conv1(x))
+        x = self.conv1(x)
+        x = F.relu(x)
+        # x = F.leaky_relu(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        # x = F.leaky_relu(x)
+
+        if self.show:
+            print("{} size after convolve: {}".format(self.string, x.shape))
+        return x
+
+class FinalConvolve(Convolve):
+    def __init__(self,in_channels,out_channels,kernel_size,string,show=False):
+        nn.Module.__init__(self)
+        super().__init__(in_channels, out_channels, kernel_size, string, show)
+    def forward(self,x):
+        if self.show:
+            print("{} size before convolve: {}".format(self.string, x.shape))
+
         x = self.conv1(x)
         x = F.relu(x)
         
-        # x = self.batch2(self.conv2(x))
         x = self.conv2(x)
+        self.freq_of_dead_neurons = getFrequencyOfDeadNeurons(x)
         x = F.relu(x)
 
         if self.show:
@@ -76,7 +95,7 @@ class UNet(nn.Module):
 
         self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
         self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2',show)
-        self.decode1 = Convolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
+        self.decode1 = FinalConvolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
 
 
         self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
@@ -84,6 +103,10 @@ class UNet(nn.Module):
         self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
         self.final = nn.Conv2d(self.feature,2,1)
+
+    @property
+    def final_conv_dead_neurons(self):
+       return self.decode1.freq_of_dead_neurons 
 
     def forward(self,x):
         d1= self.encode1(x)
