@@ -109,8 +109,7 @@ class UNet(nn.Module):
         u1 = crop_and_concat(u1,d1)
         u1 = self.decode1(u1)
 
-        u1 = self.final(u1)
-        return F.softmax(u1,dim=1)
+        return self.final(u1)
 
 def crop_and_concat(upsampled, bypass):
     ## may run to troubles if c is not even. 
@@ -148,8 +147,8 @@ if __name__ == '__main__':
     lookup_table[6]=100
     lookup_table[7]=120
     lookup_table[8]=137
-    lookup_table[9]=155
-    kernel_size = 8
+    lookup_table[9]=156
+    kernel_size = 9
     feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)

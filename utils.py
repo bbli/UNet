@@ -9,6 +9,7 @@ import torch
 from numpy import cos,pi
 from sklearn.preprocessing import StandardScaler
 import skimage.util as util
+import torch.nn.functional as F
 
 def code(function):
     print(getsource(function))
@@ -24,15 +25,27 @@ def hist(image):
     plt.show()
 
 ##########################################################
-def score(outputs, labels):
+def score(score_variable, labels):
     '''
     Input: outputs is a 4D Pytorch Variable, labels is a 3D Pytorch variable. 
     '''
-    assert outputs.shape[-1] == labels.shape[-1], "Tensors should have the same spatial dimension"
-    outputs,labels = reduceTo2D(outputs,labels)
-
-    boo = (outputs== labels)
+    assert score_variable.shape[-1] == labels.shape[-1], "Tensors should have the same spatial dimension"
+    cell_prob = getPrediction(score_variable)
+    labels = reduceLabelTo2D(labels)
+    ipdb.set_trace()
+    boo = (cell_prob== labels)
     return boo.mean()
+
+def getPrediction(score_variable):
+    cell_prob = F.softmax(score_variable,dim=1)
+    cell_prob = cell_prob.cpu().data.numpy()
+    pred = np.argmax(cell_prob,axis=1)
+    return pred[0]
+
+def reduceLabelTo2D(labels):
+    labels = labels.cpu().data.numpy()
+    return labels[0]
+
 
 def reduceTo2D(outputs,labels):
     outputs = outputs.cpu().data.numpy()
@@ -44,10 +57,30 @@ def reduceTo2D(outputs,labels):
     outputs = outputs[0]
     return outputs,labels
 
-def getCellProb(torch_tensor):
-    cell_prob = torch_tensor.cpu().data.numpy()
+def getCellProb(score_variable):
+    cell_prob = F.softmax(score_variable,dim=1)
+    cell_prob = cell_prob.cpu().data.numpy()
+    ##create softmax probs
     cell_prob = cell_prob[0,1,:,:]
     return cell_prob
+
+def logImage(numpy_array):
+    '''
+    Converts numpy image into a 3D Torch Tensor
+    '''
+    numpy_array = numpy_array.reshape(1,*numpy_array.shape)
+    numpy_array = torch.from_numpy(numpy_array)
+    return numpy_array
+
+def logInitialCellProb(torch_tensor,count,w,dict_of_images):
+    if count==1:
+        cell_prob = getCellProb(torch_tensor)
+        w.add_image("Initial Cell Probability",logImage(cell_prob),count)
+        dict_of_images["Initial Cell Prob"] = cell_prob
+def logFinalCellProb(score_variable,w,dict_of_images):
+    cell_prob = getCellProb(score_variable)
+    w.add_image("Final Cell Probability",logImage(cell_prob),1)
+    dict_of_images["Final Cell Prob"] = cell_prob
 
 def crop(outputs,labels):
     '''
@@ -88,6 +121,7 @@ def getWeightMap(dataloader):
 def showComparsion(output,label):
     '''
     Input: output is a 4D Pytorch Variable, label is a 3D Pytorch Variable
+    Note this function may not work anymore because output is now a score variable.
     '''
     output, label = reduceTo2D(output,label)
     fig = plt.figure(figsize=(15,15))
@@ -165,21 +199,3 @@ def Padder(factor):
     def f(image):
         return util.pad(image,factor,mode='constant',constant_values=0) 
     return f
-def logImage(numpy_array):
-    '''
-    Converts numpy image into a 3D Torch Tensor
-    '''
-    numpy_array = numpy_array.reshape(1,*numpy_array.shape)
-    numpy_array = torch.from_numpy(numpy_array)
-    return numpy_array
-
-def logInitialCellProb(torch_tensor,count,w,dict_of_images):
-    if count==1:
-        cell_prob = getCellProb(torch_tensor)
-        cell_prob = logImage(cell_prob)
-        w.add_image("Initial Cell Probability",cell_prob,count)
-        dict_of_images["Initial Cell Prob"] = cell_prob
-def logFinalCellProb(torch_tensor,w,dict_of_images):
-    cell_prob = getCellProb(torch_tensor)
-    w.add_image("Final Cell Probability",logImage(cell_prob),1)
-    dict_of_images["Final Cell Prob"] = cell_prob

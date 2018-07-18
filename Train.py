@@ -63,8 +63,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.8
-    cyclic_rate = 28
-    epochs = 25
+    cyclic_rate = 31
+    epochs = 60
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     # net.apply(weightInitialization)
@@ -125,15 +125,16 @@ def testModel(net,test_loader,w):
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
-        logFinalCellProb(output,w,g_dict_of_images)
-
         test_score = score(output,label)
-        output, label = reduceTo2D(output,label)
-        
+
+        ################### **Prep for Logging** #########################
+        logFinalCellProb(output,w,g_dict_of_images)
+        seg = getPrediction(output)
+        label = reduceLabelTo2D(label)
         ################### **Logging** #########################
         # w.add_image("Input",img[0],i)
         ## These two will be LongTensors, which should be ok since values are either 1 or 0
-        w.add_image("Segmentation",logImage(output),i)
+        w.add_image("Segmentation",logImage(seg),i)
         w.add_image("Label",logImage(label),i)
         w.add_text("Test score","Test score: "+str(test_score))
         # scipy.misc.imsave("pics/"+str(label)+".tiff",output)
@@ -143,13 +144,13 @@ def testModel(net,test_loader,w):
 feature_maps=32
 ks = 8
 lr = 3e-2
-# os.chdir('one_train_image')
-os.chdir('debug')
+os.chdir('one_train_image')
+# os.chdir('debug')
 
 g_dict_of_images={}
 train_loader,test_loader = dataCreator(ks)
 w = SummaryWriter()
-w.add_text("Thoughts","Removed my custom weight initalization")
+w.add_text("Thoughts","UNet doesn't take softmax anymore, so in theory, things should work now, because we are not being pushed to 50 percent now")
 print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
 model = trainModel(ks,feature_maps,lr,train_loader,w)
 test_score = testModel(model,test_loader,w)
