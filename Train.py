@@ -71,7 +71,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.8
     cyclic_rate = 31
-    epochs = 5
+    epochs = 20
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -152,18 +152,20 @@ def testModel(net,test_loader,w):
 feature_maps=32
 ks = 8
 lr = 3.5e-2
-os.chdir('hypotheses')
+os.chdir('initial_cell_prob')
 # os.chdir('debug')
-g_dict_of_images={}
-train_loader,test_loader = dataCreator(ks)
+for _ in range(5):
+    print("Run:",_)
+    g_dict_of_images={}
+    train_loader,test_loader = dataCreator(ks)
 
-w = SummaryWriter()
-w.add_text("Thoughts","I think learning rate was the cause of the leveling out. Testing that now")
-print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-model = trainModel(ks,feature_maps,lr,train_loader,w)
-test_score = testModel(model,test_loader,w)
-print("Test score: ",str(test_score))
-w.close()
+    w = SummaryWriter()
+    w.add_text("Thoughts","I think learning rate was the cause of the leveling out. Testing that now")
+    print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+    model = trainModel(ks,feature_maps,lr,train_loader,w)
+    test_score = testModel(model,test_loader,w)
+    print("Test score: ",str(test_score))
+    w.close()
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")
