@@ -7,6 +7,7 @@ import torch.nn as nn
 import ipdb
 import scipy.misc
 import os
+from FakeData import *
 
 from utils import *
 from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
@@ -33,10 +34,14 @@ def dataCreator(ks):
     # lookup_table[8]=135
     # lookup_table[9]=155
     ################### **Creating Dataset** #########################
-    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
-    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
-    test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
-    test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+    # train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+    # train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+    # test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+    # test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+    train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
+    train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
+    test_images_path = '/home/bbli/ML_Code/UNet/Data/fake/test_images.npy'
+    test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/test_labels.npy'
 
 
     center = Standarize()
@@ -47,11 +52,13 @@ def dataCreator(ks):
     transforms = Compose([center,pad])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
     ##########################################################
-    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    # train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
     checkTrainSetMean(train_dataset)
 
-    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    # test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
     ################### **Export Variables** #########################
     train_loader = DataLoader(train_dataset,shuffle=True)
     test_loader = DataLoader(test_dataset,shuffle=True)
@@ -64,7 +71,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.8
     cyclic_rate = 31
-    epochs = 3
+    epochs = 5
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -144,24 +151,22 @@ def testModel(net,test_loader,w):
 
 feature_maps=32
 ks = 8
-lr = 3e-2
-os.chdir('one_train_image')
+lr = 3.5e-2
+os.chdir('hypotheses')
 # os.chdir('debug')
-
 g_dict_of_images={}
 train_loader,test_loader = dataCreator(ks)
+
 w = SummaryWriter()
-w.add_text("Thoughts","UNet doesn't take softmax anymore, so in theory, things should work now, because we are not being pushed to 50 percent now")
+w.add_text("Thoughts","I think learning rate was the cause of the leveling out. Testing that now")
 print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
 model = trainModel(ks,feature_maps,lr,train_loader,w)
 test_score = testModel(model,test_loader,w)
 print("Test score: ",str(test_score))
-
 w.close()
+
 # torch.save(best_model.state_dict(),'best_model.pt')
-final_cell_prob = g_dict_of_images['Final Cell Prob']
-print(final_cell_prob.mean())
-print(final_cell_prob[100:105,100:105])
+# print("Log post train thoughts:")
 # cell_prob= g_dict_of_images['Inital Cell Prob']
 # seg = cell_prob*(cell_prob>0.5)
 # import matplotlib.pyplot as plt

@@ -87,10 +87,16 @@ def logInitialCellProb(torch_tensor,count,w,dict_of_images):
         cell_prob = getCellProb(torch_tensor)
         w.add_image("Initial Cell Probability",logImage(cell_prob),count)
         dict_of_images["Initial Cell Prob"] = cell_prob
+        print("Initial Cell Prob Mean:",cell_prob.mean())
+        print("Sample of Initial Cell Probabilties")
+        print(cell_prob[100:105,100:105])
 def logFinalCellProb(score_variable,w,dict_of_images):
-    cell_prob = getCellProb(score_variable)
-    w.add_image("Final Cell Probability",logImage(cell_prob),1)
-    dict_of_images["Final Cell Prob"] = cell_prob
+    final_cell_prob = getCellProb(score_variable)
+    w.add_image("Final Cell Probability",logImage(final_cell_prob),1)
+    dict_of_images["Final Cell Prob"] = final_cell_prob
+    # print("Finall Cell Prob Mean:",final_cell_prob.mean())
+    # print("Sample of Final Cell Probabilties")
+    # print(final_cell_prob[100:105,100:105])
 
 def crop(outputs,labels):
     '''
@@ -116,7 +122,7 @@ def checkTrainSetMean(train_dataset):
     for i,_ in enumerate(train_dataset):
         a = np.mean(train_dataset[i][0].numpy())
         mean += a 
-    print("Mean pixel value-after transforms: {}".format(mean))
+    # print("Mean pixel value-after transforms: {}".format(mean))
 
 
 def getWeightMap(dataloader):
