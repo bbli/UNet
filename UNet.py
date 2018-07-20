@@ -171,7 +171,7 @@ if __name__ == '__main__':
     lookup_table[7]=120
     lookup_table[8]=137
     lookup_table[9]=156
-    kernel_size = 9
+    kernel_size = 8
     feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)

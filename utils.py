@@ -68,9 +68,10 @@ def reduceTo2D(outputs,labels):
     return outputs,labels
 
 def getCellProb(score_variable):
+    ##create softmax probs
     cell_prob = F.softmax(score_variable,dim=1)
     cell_prob = cell_prob.cpu().data.numpy()
-    ##create softmax probs
+    ## get foreground probs
     cell_prob = cell_prob[0,1,:,:]
     return cell_prob
 
@@ -88,15 +89,15 @@ def logInitialCellProb(torch_tensor,count,w,dict_of_images):
         w.add_image("Initial Cell Probability",logImage(cell_prob),count)
         dict_of_images["Initial Cell Prob"] = cell_prob
         print("Initial Cell Prob Mean:",cell_prob.mean())
-        print("Sample of Initial Cell Probabilties")
-        print(cell_prob[100:105,100:105])
+        # print("Sample of Initial Cell Probabilties")
+        # print(cell_prob[100:105,100:105])
 def logFinalCellProb(score_variable,w,dict_of_images):
     final_cell_prob = getCellProb(score_variable)
     w.add_image("Final Cell Probability",logImage(final_cell_prob),1)
     dict_of_images["Final Cell Prob"] = final_cell_prob
-    # print("Finall Cell Prob Mean:",final_cell_prob.mean())
-    # print("Sample of Final Cell Probabilties")
-    # print(final_cell_prob[100:105,100:105])
+    print("Final Cell Prob Mean:",final_cell_prob.mean())
+    print("Sample of Final Cell Probabilties")
+    print(final_cell_prob[100:105,100:105])
 
 def crop(outputs,labels):
     '''

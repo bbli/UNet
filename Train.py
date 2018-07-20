@@ -10,7 +10,7 @@ import os
 from FakeData import *
 
 from utils import *
-from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
+# from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
 
 
@@ -38,16 +38,16 @@ def dataCreator(ks):
     # train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
     # test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
     # test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
-    train_images_path = '/home/bbli/ML_Code/UNet/Data/fake/train_images.npy'
-    train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/train_labels.npy'
-    test_images_path = '/home/bbli/ML_Code/UNet/Data/fake/test_images.npy'
-    test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake/test_labels.npy'
+    train_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_images.npy'
+    train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_labels.npy'
+    test_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_images.npy'
+    test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_labels.npy'
 
 
     center = Standarize()
     pad_size = lookup_table[ks]
     # assert pad_size != 0, "You have not initialized the padding for this kernel size"
-    print("Pad size: ",pad_size)
+    # print("Pad size: ",pad_size)
     pad = Padder(pad_size)
     transforms = Compose([center,pad])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
@@ -69,15 +69,15 @@ def trainModel(ks,fm,lr,train_loader,w):
     kernel_size = ks
     feature_maps = fm
     learn_rate = lr
-    momentum_rate = 0.8
-    cyclic_rate = 31
-    epochs = 20
+    momentum_rate = 0.75
+    cyclic_rate = 28
+    epochs = 50
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
     net.train()
 
-    # alpha = 0.06
+    alpha = 0.4
     # weight_map = np.array([alpha,1-alpha])
     weight_map = getWeightMap(train_loader)
     # print("Weight Map: ", weight_map)
@@ -89,15 +89,16 @@ def trainModel(ks,fm,lr,train_loader,w):
 
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     criterion = nn.CrossEntropyLoss(weight=weight_map)
+    # criterion = nn.CrossEntropyLoss()
 
 
     optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    # optimizer2 = optim.Adam(net.parameters(),lr = 0.5*learn_rate)
+    # optimizer = optim.Adadelta(net.parameters())
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
     for epoch in range(epochs):
-        for idx,(img,label) in enumerate(train_loader):
+        for img,label in train_loader:
             count += 1
             ################### **Feed Foward** #########################
             img, label = tensor_format(img), tensor_format(label)
@@ -150,22 +151,35 @@ def testModel(net,test_loader,w):
 
 
 feature_maps=32
-ks = 8
-lr = 3.5e-2
-os.chdir('initial_cell_prob')
-# os.chdir('debug')
-for _ in range(5):
-    print("Run:",_)
-    g_dict_of_images={}
-    train_loader,test_loader = dataCreator(ks)
+# ks = 6
+# lr = 8e-3
+# os.chdir('level_out_loss/initial_cell_prob')
+# os.chdir('level_out_loss/learn_rate')
+# os.chdir('level_out_loss/fake1')
 
-    w = SummaryWriter()
-    w.add_text("Thoughts","I think learning rate was the cause of the leveling out. Testing that now")
-    print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-    model = trainModel(ks,feature_maps,lr,train_loader,w)
-    test_score = testModel(model,test_loader,w)
-    print("Test score: ",str(test_score))
-    w.close()
+os.chdir('level_out_loss/hyper')
+# os.chdir('debug')
+count = 0
+dict_of_image_dicts ={}
+kernel_list = [3,5,8]
+learn_rate_list = [1.6e-2,8e-3,4e-3]
+for ks in kernel_list:
+    for lr in learn_rate_list:
+        count += 1
+        print("Run:",count)
+        g_dict_of_images={}
+
+        train_loader,test_loader = dataCreator(ks)
+        w = SummaryWriter()
+        # w.add_text("Thoughts","Shit forgot about equating the kernel size")
+        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+        model = trainModel(ks,feature_maps,lr,train_loader,w)
+        test_score = testModel(model,test_loader,w)
+        print("Test score: ",str(test_score))
+        w.close()
+
+        string = "ks_"+str(ks)+"lr_"+str(lr)
+        dict_of_image_dicts[string]=g_dict_of_images
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")

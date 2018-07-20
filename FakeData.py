@@ -26,8 +26,8 @@ class FakeDataset(Dataset):
         self.transform = transform
         self.images = np.load(image_path)
         ## Getting one image for testing purposes
-        self.images = self.images[0]
-        self.images = self.images.reshape(1,*self.images.shape)
+        # self.images = self.images[0]
+        # self.images = self.images.reshape(1,*self.images.shape)
         self.labels = np.load(label_path)
         if factor:
             self.images = downsize(self.images,factor)
