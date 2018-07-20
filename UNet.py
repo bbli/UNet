@@ -1,12 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Function
 import torchvision
-from tensorboardX import SummaryWriter
 from utils import *
 # from functools import partial
-from Data import *
 import ipdb
 import math
 
@@ -181,7 +178,7 @@ if __name__ == '__main__':
     # label = tensor_format(label)
 
     # model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
-    model = UNet(kernel_size,feature_maps,show=True).cuda(1)
+    model = UNet(kernel_size,feature_maps,show=True).cuda(0)
     model.apply(weightInitialization)
 
     z = model(img)

@@ -8,6 +8,7 @@ import ipdb
 import scipy.misc
 import os
 from FakeData import *
+from DataUtils import *
 
 from utils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader

@@ -8,6 +8,7 @@ import os
 import numpy as np
 from skimage.transform import downscale_local_mean
 import ipdb
+from DataUtils import *
 
 from utils import *
 from UNet import *
@@ -29,15 +30,6 @@ def stackImages(image_list):
         batch_array[i] = pic
     return batch_array
 
-def downsize(images,factor):
-    new_tensor = downscale_local_mean(images[0],factors=(factor,factor))
-    new_tensor = new_tensor.reshape(1,*new_tensor.shape)
-    for image in images[1:]:
-        new_image = downscale_local_mean(image,factors=(factor,factor))
-        new_image = new_image.reshape(1,*new_image.shape)
-        # ipdb.set_trace()
-        new_tensor = np.concatenate((new_tensor,new_image),axis=0)
-    return new_tensor
 
 def fixLabeling(labels):
     labels[labels==0] = 1
@@ -66,48 +58,31 @@ class ParhyaleDataset(Dataset):
             return imageToTorch(self.transform(image)),labelToTorch(label)
         else:
             return imageToTorch(image), labelToTorch(label)
-######################################################
-## wrapper so StandardScaler will work inside a Pytorch Compose
-#images is a 3D Tensor
-# class Standarize():
-    # def __init__(self):
-        # self.scaler = StandardScaler(with_std=False)
-    # def __call__(self, image):
-        # ## reshape
-        # shape = image.shape[-1]
-        # image = image.reshape(1,shape*shape)
-        # image=self.scaler.transform(image)
-        # return image.reshape(shape,shape)
-    # def fit(self,images):
-        # ## reshape
-        # length = len(images)
-        # images = images.reshape(length,-1)
-        # self.scaler.fit(images)
-
-################### **Creating Dataset** #########################
-train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
-train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
-test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
-test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
-
-
-center = Standarize()
-pad_size = 160
-pad = Padder(pad_size)
-transforms = Compose([center,pad])
-# transforms = Compose ([ToTensor(),Standarize(0,1)])
-##########################################################
-train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-train_dataset.fit([center])
-checkTrainSetMean(train_dataset)
-
-test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
-################### **Export Variables** #########################
-train_loader = DataLoader(train_dataset,shuffle=True)
-test_loader = DataLoader(test_dataset,shuffle=True)
-
 
 if __name__=='__main__':
+    ################### **Creating Dataset** #########################
+    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+    test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+    test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+
+
+    center = Standarize()
+    pad_size = 160
+    pad = Padder(pad_size)
+    transforms = Compose([center,pad])
+    # transforms = Compose ([ToTensor(),Standarize(0,1)])
+    ##########################################################
+    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    train_dataset.fit([center])
+    checkTrainSetMean(train_dataset)
+
+    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    ################### **Export Variables** #########################
+    train_loader = DataLoader(train_dataset,shuffle=True)
+    test_loader = DataLoader(test_dataset,shuffle=True)
+
+
     img,label = next(iter(train_loader))
     print("Pad size: ",pad_size)
     # size = 700
