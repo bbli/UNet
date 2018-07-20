@@ -14,12 +14,12 @@ from UNet import *
 ##########################################################
 
 class FakeDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=None,transform=None,num_pic=None):
+    def __init__(self,image_path,label_path,factor=None,transform=None):
         self.transform = transform
         self.images = np.load(image_path)
         ## Getting one image for testing purposes
-        if num_pic:
-            self.images = self.images[0:num_pic]
+        # if num_pic:
+            # self.images = self.images[0:num_pic]
             # printVariance(self.images)
             # self.images = self.images.reshape(1,*self.images.shape)
         self.labels = np.load(label_path)

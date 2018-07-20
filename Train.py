@@ -15,7 +15,7 @@ from utils import *
 from UNet import *
 
 
-def dataCreator(ks,num_pic):
+def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
     ## 3 Layers
     lookup_table[3]=45
@@ -35,14 +35,14 @@ def dataCreator(ks,num_pic):
     # lookup_table[8]=135
     # lookup_table[9]=155
     ################### **Creating Dataset** #########################
-    # train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
-    # train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
-    # test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
-    # test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
-    train_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_images.npy'
-    train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_labels.npy'
-    test_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_images.npy'
-    test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_labels.npy'
+    train_images_path = '/data/bbli/gryllus_disk_images/train/images/'
+    train_labels_path = '/data/bbli/gryllus_disk_images/train/labels/'
+    test_images_path = '/data/bbli/gryllus_disk_images/val/images/'
+    test_labels_path = '/data/bbli/gryllus_disk_images/val/labels/'
+    # train_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_images.npy'
+    # train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_labels.npy'
+    # test_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_images.npy'
+    # test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_labels.npy'
 
 
     center = Standarize()
@@ -54,7 +54,7 @@ def dataCreator(ks,num_pic):
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
     ##########################################################
     # train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms,num_pic=num_pic)
+    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
     checkTrainSetMean(train_dataset)
 
@@ -160,16 +160,17 @@ lr = 8e-3
 # os.chdir('level_out_loss/fake1')
 
 # os.chdir('level_out_loss/hyper')
-os.chdir('level_out_loss/num_pic')
+# os.chdir('level_out_loss/num_pic')
+os.chdir('level_out_loss/normalization')
 # os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
-for num_pic in range(9):
+for _ in range(4):
     count += 1
     print("Run:",count)
     g_dict_of_images={}
 
-    train_loader,test_loader = dataCreator(ks,num_pic+1)
+    train_loader,test_loader = dataCreator(ks)
     w = SummaryWriter()
     # w.add_text("Thoughts","Shit forgot about equating the kernel size")
     # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
@@ -178,8 +179,8 @@ for num_pic in range(9):
     print("Test score: ",str(test_score))
     w.close()
 
-    string = "ks_"+str(ks)+"lr_"+str(lr)
-    dict_of_image_dicts[string]=g_dict_of_images
+    # string = "ks_"+str(ks)+"lr_"+str(lr)
+    dict_of_image_dicts[str(_)]=g_dict_of_images
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")
