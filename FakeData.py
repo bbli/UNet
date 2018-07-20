@@ -22,12 +22,13 @@ def downsize(images,factor):
     return new_tensor
 
 class FakeDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=None,transform=None):
+    def __init__(self,image_path,label_path,factor=None,transform=None,num_pic=None):
         self.transform = transform
         self.images = np.load(image_path)
         ## Getting one image for testing purposes
-        # self.images = self.images[0]
-        # self.images = self.images.reshape(1,*self.images.shape)
+        if num_pic:
+            self.images = self.images[0:num_pic]
+            # self.images = self.images.reshape(1,*self.images.shape)
         self.labels = np.load(label_path)
         if factor:
             self.images = downsize(self.images,factor)
@@ -108,7 +109,7 @@ if __name__=='__main__':
     checkTrainSetMean(train_dataset)
     ##########################################################
 
-    train_set = DataLoader(train_dataset,shuffle=True)
+    train_set = DataLoader(train_dataset,shuffle=False)
 
     img,label = next(iter(train_set))
     # size = 700

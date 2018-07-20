@@ -14,7 +14,7 @@ from utils import *
 from UNet import *
 
 
-def dataCreator(ks):
+def dataCreator(ks,num_pic):
     lookup_table = np.zeros(20,dtype='int16')
     ## 3 Layers
     lookup_table[3]=45
@@ -53,7 +53,7 @@ def dataCreator(ks):
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
     ##########################################################
     # train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
+    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms,num_pic=num_pic)
     train_dataset.fit([center])
     checkTrainSetMean(train_dataset)
 
@@ -64,7 +64,7 @@ def dataCreator(ks):
     test_loader = DataLoader(test_dataset,shuffle=True)
     return train_loader,test_loader
 
-def trainModel(ks,fm,lr,train_loader,w):
+def trainModel(train_loader,w):
 
     kernel_size = ks
     feature_maps = fm
@@ -73,7 +73,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     cyclic_rate = 28
     epochs = 50
 
-    net = UNet(kernel_size,feature_maps).cuda(1)
+    net = UNet(kernel_size,feature_maps).cuda(0)
     net.apply(weightInitialization)
     net.train()
 
@@ -100,6 +100,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     for epoch in range(epochs):
         for img,label in train_loader:
             count += 1
+            ipdb.set_trace()
             ################### **Feed Foward** #########################
             img, label = tensor_format(img), tensor_format(label)
 
@@ -150,36 +151,34 @@ def testModel(net,test_loader,w):
     return test_score
 
 
-feature_maps=32
-# ks = 6
-# lr = 8e-3
+fm =32
+ks = 6
+lr = 8e-3
 # os.chdir('level_out_loss/initial_cell_prob')
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 
-os.chdir('level_out_loss/hyper')
+# os.chdir('level_out_loss/hyper')
+os.chdir('level_out_loss/num_pic')
 # os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
-kernel_list = [3,5,8]
-learn_rate_list = [1.6e-2,8e-3,4e-3]
-for ks in kernel_list:
-    for lr in learn_rate_list:
-        count += 1
-        print("Run:",count)
-        g_dict_of_images={}
+for num_pic in range(9):
+    count += 1
+    print("Run:",count)
+    g_dict_of_images={}
 
-        train_loader,test_loader = dataCreator(ks)
-        w = SummaryWriter()
-        # w.add_text("Thoughts","Shit forgot about equating the kernel size")
-        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-        model = trainModel(ks,feature_maps,lr,train_loader,w)
-        test_score = testModel(model,test_loader,w)
-        print("Test score: ",str(test_score))
-        w.close()
+    train_loader,test_loader = dataCreator(ks,num_pic+1)
+    w = SummaryWriter()
+    # w.add_text("Thoughts","Shit forgot about equating the kernel size")
+    # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+    model = trainModel(train_loader,w)
+    test_score = testModel(model,test_loader,w)
+    print("Test score: ",str(test_score))
+    w.close()
 
-        string = "ks_"+str(ks)+"lr_"+str(lr)
-        dict_of_image_dicts[string]=g_dict_of_images
+    string = "ks_"+str(ks)+"lr_"+str(lr)
+    dict_of_image_dicts[string]=g_dict_of_images
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")
