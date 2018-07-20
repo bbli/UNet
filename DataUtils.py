@@ -53,8 +53,10 @@ class Standarize1(StandardScaler):
 class Standarize():
     def fit(self,image_stack):
         self.mean_values=image_stack.mean(axis=0)
+        # self.std = image_stack.std(axis=0)+1e-7
     def __call__(self,image):
-       return image-self.mean_values 
+       # return (image-self.mean_values)/self.std
+       return image-self.mean_values
 
 def Padder(factor):
     def f(image):

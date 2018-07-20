@@ -7,7 +7,8 @@ import torch.nn as nn
 import ipdb
 import scipy.misc
 import os
-from FakeData import *
+# from FakeData import *
+from Data import *
 from DataUtils import *
 
 from utils import *
@@ -53,13 +54,14 @@ def dataCreator(ks):
     transforms = Compose([center,pad])
     # transforms = Compose ([ToTensor(),Standarize(0,1)])
     ##########################################################
-    # train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-    train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
+    # print("Hi")
+    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    # train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
     checkTrainSetMean(train_dataset)
 
-    # test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
-    test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
+    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    # test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
     ################### **Export Variables** #########################
     train_loader = DataLoader(train_dataset,shuffle=True)
     test_loader = DataLoader(test_dataset,shuffle=True)
@@ -74,7 +76,7 @@ def trainModel(train_loader,w):
     cyclic_rate = 28
     epochs = 50
 
-    net = UNet(kernel_size,feature_maps).cuda(0)
+    net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
     net.train()
 
@@ -101,7 +103,6 @@ def trainModel(train_loader,w):
     for epoch in range(epochs):
         for img,label in train_loader:
             count += 1
-            ipdb.set_trace()
             ################### **Feed Foward** #########################
             img, label = tensor_format(img), tensor_format(label)
 
