@@ -46,8 +46,7 @@ class ParhyaleDataset(Dataset):
             self.labels = downsize(self.labels,factor)
         print("Mean pixel value-before transforms: ", np.mean(self.images[0]))
         print("Percentage of cells in first image: ", np.mean(self.labels[0]))
-        printVariance(self.images)
-        ipdb.set_trace()
+        # printVariance(self.images)
     def fit(self,scalers):
         for scaler in scalers:
             scaler.fit(self.images)

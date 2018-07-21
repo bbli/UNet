@@ -73,8 +73,8 @@ def trainModel(train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.75
-    cyclic_rate = 28
-    epochs = 50
+    cyclic_rate = 60
+    epochs = 40
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -155,7 +155,7 @@ def testModel(net,test_loader,w):
 
 fm =32
 ks = 6
-lr = 8e-3
+lr = 1e-3
 # os.chdir('level_out_loss/initial_cell_prob')
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
