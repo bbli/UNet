@@ -33,7 +33,7 @@ def initialNetGenerator(ks,fm,train_loader):
         if outlier:
             pass
         else:
-            print("One Initial Cell Probability: ",cell_prob_mean)
+            # print("One Initial Cell Probability: ",cell_prob_mean)
             return net
 
 def dataCreator(ks):
@@ -115,8 +115,9 @@ def trainModel(ks,fm,lr,train_loader,w):
 
 
     optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    optimizer2 = optim.RMSprop(net.parameters(),lr = 0.2*learn_rate,momentum=0.9*momentum_rate)
+    optimizer2 = optim.SGD(net.parameters(),lr = 0.2*learn_rate,momentum=0.9*momentum_rate)
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
+    scheduler2 = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
     for epoch in range(epochs):
@@ -139,7 +140,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            if epoch<42:
+            if epoch<40:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -148,6 +149,7 @@ def trainModel(ks,fm,lr,train_loader,w):
                 optimizer2.zero_grad()
                 loss.backward()
                 optimizer2.step()
+                scheduler2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -179,10 +181,10 @@ fm =32
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 
-# os.chdir('level_out_loss/hyper')
+os.chdir('level_out_loss/hyper')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
-os.chdir('debug')
+# os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
 kernel_list = [3,5,8]
