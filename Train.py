@@ -67,14 +67,14 @@ def dataCreator(ks):
     test_loader = DataLoader(test_dataset,shuffle=True)
     return train_loader,test_loader
 
-def trainModel(train_loader,w):
+def trainModel(ks,fm,lr,train_loader,w):
 
     kernel_size = ks
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.75
-    cyclic_rate = 60
-    epochs = 40
+    cyclic_rate = 80
+    epochs = 60
 
     net = UNet(kernel_size,feature_maps).cuda(1)
     net.apply(weightInitialization)
@@ -96,7 +96,7 @@ def trainModel(train_loader,w):
 
 
     optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    # optimizer = optim.Adadelta(net.parameters())
+    optimizer2 = optim.RMSprop(net.parameters(),lr = 0.5*learn_rate,momentum=0.9*momentum_rate)
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -120,15 +120,15 @@ def trainModel(train_loader,w):
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            # if epoch<45:
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            # else:
-                # optimizer2.zero_grad()
-                # loss.backward()
-                # optimizer2.step()
+            if epoch<45:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+            else:
+                optimizer2.zero_grad()
+                loss.backward()
+                optimizer2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -154,34 +154,37 @@ def testModel(net,test_loader,w):
 
 
 fm =32
-ks = 6
-lr = 1e-3
+# ks = 6
+# lr = 1e-3
 # os.chdir('level_out_loss/initial_cell_prob')
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 
-# os.chdir('level_out_loss/hyper')
+os.chdir('level_out_loss/hyper')
 # os.chdir('level_out_loss/num_pic')
-os.chdir('level_out_loss/normalization')
+# os.chdir('level_out_loss/normalization')
 # os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
-for _ in range(4):
-    count += 1
-    print("Run:",count)
-    g_dict_of_images={}
+kernel_list = [3,5,8]
+learn_rate_list = [1.6e-2,8e-3,4e-3]
+for ks in kernel_list:
+    for lr in learn_rate_list:
+        count += 1
+        print("Run:",count)
+        g_dict_of_images={}
 
-    train_loader,test_loader = dataCreator(ks)
-    w = SummaryWriter()
-    # w.add_text("Thoughts","Shit forgot about equating the kernel size")
-    # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-    model = trainModel(train_loader,w)
-    test_score = testModel(model,test_loader,w)
-    print("Test score: ",str(test_score))
-    w.close()
+        train_loader,test_loader = dataCreator(ks)
+        w = SummaryWriter()
+        # w.add_text("Thoughts","Shit forgot about equating the kernel size")
+        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+        model = trainModel(ks,fm,lr,train_loader,w)
+        test_score = testModel(model,test_loader,w)
+        print("Test score: ",str(test_score))
+        w.close()
 
-    # string = "ks_"+str(ks)+"lr_"+str(lr)
-    dict_of_image_dicts[str(_)]=g_dict_of_images
+        string = "ks_"+str(ks)+"lr_"+str(lr)
+        dict_of_image_dicts[string]=g_dict_of_images
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")
