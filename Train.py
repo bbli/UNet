@@ -15,6 +15,26 @@ from utils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
 
+def initialNetGenerator(ks,fm,train_loader):
+    good_net = False
+    while not good_net:
+        net = UNet(ks,fm).cuda(1)
+        net.apply(weightInitialization)
+        net.train()
+        list_of_booleans=[]
+        for img,label in train_loader:
+            img, label = tensor_format(img), tensor_format(label)
+            output = net(img)
+            output, label = crop(output,label)
+            cell_prob_mean = getCellProb(output).mean()
+            diff = abs(cell_prob_mean-0.5)
+            list_of_booleans.append(diff>0.2)
+        outlier = any(list_of_booleans)
+        if outlier:
+            pass
+        else:
+            print("One Initial Cell Probability: ",cell_prob_mean)
+            return net
 
 def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
@@ -73,12 +93,11 @@ def trainModel(ks,fm,lr,train_loader,w):
     feature_maps = fm
     learn_rate = lr
     momentum_rate = 0.75
-    cyclic_rate = 80
+    cyclic_rate = 120
     epochs = 60
 
-    net = UNet(kernel_size,feature_maps).cuda(1)
-    net.apply(weightInitialization)
-    net.train()
+    net = initialNetGenerator(kernel_size,feature_maps,train_loader)
+    ipdb.set_trace()
 
     alpha = 0.4
     # weight_map = np.array([alpha,1-alpha])
@@ -96,7 +115,7 @@ def trainModel(ks,fm,lr,train_loader,w):
 
 
     optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
-    optimizer2 = optim.RMSprop(net.parameters(),lr = 0.5*learn_rate,momentum=0.9*momentum_rate)
+    optimizer2 = optim.RMSprop(net.parameters(),lr = 0.2*learn_rate,momentum=0.9*momentum_rate)
     scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -120,7 +139,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            if epoch<45:
+            if epoch<42:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -160,14 +179,14 @@ fm =32
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 
-os.chdir('level_out_loss/hyper')
+# os.chdir('level_out_loss/hyper')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
-# os.chdir('debug')
+os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
 kernel_list = [3,5,8]
-learn_rate_list = [1.6e-2,8e-3,4e-3]
+learn_rate_list = [3e-4,1e-3,4e-3,8e-3]
 for ks in kernel_list:
     for lr in learn_rate_list:
         count += 1
