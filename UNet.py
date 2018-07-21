@@ -172,13 +172,13 @@ if __name__ == '__main__':
     feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
-    size = 400+2*int(lookup_table[kernel_size])
+    size = 344+2*int(lookup_table[kernel_size])
     img = torch.Tensor(1,1,size,size)
     img = tensor_format(img)
     # label = tensor_format(label)
 
     # model = FourLayerUNet(kernel_size,feature_maps,show=True).cuda(1)
-    model = UNet(kernel_size,feature_maps,show=True).cuda(0)
+    model = UNet(kernel_size,feature_maps,show=True).cuda(1)
     model.apply(weightInitialization)
 
     z = model(img)

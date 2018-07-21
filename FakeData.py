@@ -25,6 +25,7 @@ class FakeDataset(Dataset):
         self.labels = np.load(label_path)
         if factor:
             self.images = downsize(self.images,factor)
+            self.labels = downsize(self.labels,factor)
         # print(np.mean(self.images[0]))
     def fit(self,scalers):
         for scaler in scalers:

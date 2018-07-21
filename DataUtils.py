@@ -78,3 +78,12 @@ def printVariance(numpy_stack):
     print("{} Images -> {} Standard Deviation".format(len(numpy_stack),std.mean()))
     # else:
         # print("Not enough images to take standard deviation")
+
+def checkTrainSetMean(train_dataset):
+    mean =0
+    ## final mean should be 0 since each pixel location has been normalized to 0 mean, and we are adding them all up as random variables
+    # numbers are -0.003, 
+    for i,_ in enumerate(train_dataset):
+        a = np.mean(train_dataset[i][0].numpy())
+        mean += a 
+    print("Mean pixel value-after transforms: {}".format(mean))

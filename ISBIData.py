@@ -6,39 +6,21 @@ from skimage import io
 import numpy as np
 import ipdb
 
-from utils import *
+from DataUtils import *
 
 ##########################################################
-def label_format(img):
-    img = rescale(img)
-    img = img.astype(int)
-    # ipdb.set_trace()
-    # In theory, it shouldn't matter whether fg gets mapped to 0 or 1
-    img = 1*np.logical_not(img) 
-    
-    img = torch.from_numpy(img).long()
-    img = img.view(1,*img.shape)
-    return img
-
-def image_format(img):
-    img = rescale(img)
-    img = toTorch(img)
-    return img
-
-def toTorch(image):
-    down_size,_ = image.shape
-    new_image = torch.from_numpy(image).float()
-    new_image = new_image.view(1,1,down_size,down_size)
-    return new_image
-
 def rescale(image):
     return image/255
 
 class ISBIDataset(Dataset):
-    def __init__(self,path,transform = None):
+    def __init__(self,path,transform = None,factor= None):
         self.images = io.imread(path+'train-volume.tif')
         self.labels = io.imread(path+'train-labels.tif')
+        self.images, self.labels  = rescale(self.images), rescale(self.labels)
         self.transform = transform
+        if factor:
+            self.images = downsize(self.images,factor)
+            self.labels = downsize(self.labels,factor)
     def __len__(self):
         return len(self.images)
     def __getitem__(self,index):
@@ -53,13 +35,14 @@ class ISBIDataset(Dataset):
             scaler.fit(self.images)
 ##########################################################
 
-path = '/home/bbli/ML_Code/UNet/Data/'
-center = Standarize()
-pad_size = 88 ##assuming kernel =3 and padder applies this to both sides(which it does)
-pad = Padder(pad_size)
-transforms = Compose([center,pad])
+if __name__ == '__main__':
+    path = '/home/bbli/ML_Code/UNet/Data/'
+    center = Standarize()
+    pad_size = 88 ##assuming kernel =3 and padder applies this to both sides(which it does)
+    pad = Padder(pad_size)
+    transforms = Compose([center,pad])
 
-dataset = ISBIDataset(path,transforms)
-dataset.fit([center])
-checkTrainSetMean(dataset)
-train_loader = DataLoader(dataset,shuffle=True)
+    dataset = ISBIDataset(path,transforms)
+    dataset.fit([center])
+    checkTrainSetMean(dataset)
+    train_loader = DataLoader(dataset,shuffle=True)
