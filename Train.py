@@ -39,16 +39,24 @@ def initialNetGenerator(ks,fm,train_loader):
 
 def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
-    ## 3 Layers
-    lookup_table[3]=45
-    lookup_table[4]=62
-    lookup_table[5]=80
-    lookup_table[6]=100
-    lookup_table[7]=120
-    lookup_table[8]=137
-    lookup_table[9]=156
+    ## 2 Layers, Image Size 401
+    lookup_table[3]=20
+    lookup_table[4]=30
+    lookup_table[5]=38
+    lookup_table[6]=47
+    lookup_table[7]=55
+    lookup_table[8]=65
+    lookup_table[9]=75
+    # ## 3 Layers, Image Size 401
+    # lookup_table[3]=45
+    # lookup_table[4]=62
+    # lookup_table[5]=80
+    # lookup_table[6]=100
+    # lookup_table[7]=120
+    # lookup_table[8]=137
+    # lookup_table[9]=156
 
-    ## 4 Layers
+    ## 4 Layers, Image Size 401
     # lookup_table[3]=45
     # lookup_table[4]=62
     # lookup_table[5]=80
@@ -70,30 +78,30 @@ def dataCreator(ks):
 
 
     center = Standarize()
-    center1 = Standarize()
+    # center1 = Standarize()
     pad_size = lookup_table[ks]
     assert pad_size != 0, "You have not initialized the padding for this kernel size"
     # print("Pad size: ",pad_size)
     pad = Padder(pad_size)
     transforms = Compose([center,pad])
-    transforms1 = Compose([center1,pad])
+    # transforms1 = Compose([center1,pad])
     ##########################################################
     # print("Hi")
     train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-    train_dataset1 = ISBIDataset(path,transforms1,factor=2)
+    # train_dataset1 = ISBIDataset(path,transforms1,factor=2)
     # train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
     train_dataset.fit([center])
-    train_dataset1.fit([center1])
+    # train_dataset1.fit([center1])
     checkTrainSetMean(train_dataset)
-    checkTrainSetMean(train_dataset1)
+    # checkTrainSetMean(train_dataset1)
 
-    # test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
     # test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
     ################### **Export Variables** #########################
     train_loader = DataLoader(train_dataset,shuffle=True)
-    train_loader1 = DataLoader(train_dataset1,shuffle=True)
-    # test_loader = DataLoader(test_dataset,shuffle=True)
-    return train_loader1
+    # train_loader1 = DataLoader(train_dataset1,shuffle=True)
+    test_loader = DataLoader(test_dataset,shuffle=True)
+    return train_loader,test_loader
     # return train_loader,test_loader
 
 def trainModel(ks,fm,lr,train_loader,w):
@@ -103,7 +111,7 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.75
     cyclic_rate = 120
-    epochs = 40
+    epochs = 60
 
     net = initialNetGenerator(kernel_size,feature_maps,train_loader)
 
@@ -122,9 +130,9 @@ def trainModel(ks,fm,lr,train_loader,w):
     # criterion = nn.CrossEntropyLoss()
 
 
-    optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
+    optimizer = optim.RMSprop(net.parameters(),lr = learn_rate,momentum=momentum_rate)
     optimizer2 = optim.SGD(net.parameters(),lr = 0.2*learn_rate,momentum=0.9*momentum_rate)
-    scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
+    # scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
     scheduler2 = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -135,6 +143,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             img, label = tensor_format(img), tensor_format(label)
             output = net(img)
             output, label = crop(output,label)
+            ipdb.set_trace()
             logInitialCellProb(output,count,w,g_dict_of_images)
             loss = criterion(output, label)
 
@@ -147,16 +156,16 @@ def trainModel(ks,fm,lr,train_loader,w):
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            if epoch<20:
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                scheduler.step()
-            else:
-                optimizer2.zero_grad()
-                loss.backward()
-                optimizer2.step()
-                scheduler2.step()
+            # if epoch<20:
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            # scheduler.step()
+            # else:
+                # optimizer2.zero_grad()
+                # loss.backward()
+                # optimizer2.step()
+                # scheduler2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -182,36 +191,40 @@ def testModel(net,test_loader,w):
     return test_score
 
 
-fm =32
+# fm =32
 ks = 3
-lr = 2e-2
-# os.chdir('level_out_loss/initial_cell_prob')
+# lr = 2e-2
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
-
-os.chdir('level_out_loss/ISBI')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
-# os.chdir('debug')
+
+# os.chdir('two_layer')
+os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
 ## already tried 8e-3
-# learn_rate_list = [8e-3,2e-2,5e-2]
+learn_rate_list = [2e-2,8e-3,3e-3,1e-3]
+learn_rate_list.reverse()
+kernel_list = [3,5,8]
+fm_list = [32,16,8]
 count += 1
 # print("Run:",count)
 g_dict_of_images={}
+for lr in learn_rate_list:
+    for fm in fm_list:
+        train_loader,test_loader = dataCreator(ks)
+        w = SummaryWriter()
+        w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
+        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+        print("Feature Maps: {} Learning Rate: ".format(fm,lr))
+        model = trainModel(ks,fm,lr,train_loader,w)
+        test_score = testModel(model,test_loader,w)
+        print("Test score: ",str(test_score))
+        w.close()
 
-train_loader = dataCreator(ks)
-w = SummaryWriter()
-w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
-# print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-model = trainModel(ks,fm,lr,train_loader,w)
-test_score = testModel(model,train_loader,w)
-# print("Test score: ",str(test_score))
-w.close()
-
-string = "ks_"+str(ks)+"lr_"+str(lr)
-dict_of_image_dicts[string]=g_dict_of_images
+        string = "ks_"+str(ks)+"lr_"+str(lr)
+        dict_of_image_dicts[string]=g_dict_of_images
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")

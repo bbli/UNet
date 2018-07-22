@@ -86,16 +86,16 @@ class UNet(nn.Module):
 
         self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1',show)
         self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2',show)
-        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
+        # self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
 
-        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c',show)
+        self.center = Convolve(self.feature*2,self.feature*4,self.kernel_size,'c',show)
 
-        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
+        # self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
         self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2',show)
         self.decode1 = FinalConvolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
 
 
-        self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
+        # self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
         self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
         self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
@@ -111,17 +111,17 @@ class UNet(nn.Module):
         d2= self.maxpool(d1)
         d2= self.encode2(d2)
 
-        d3 = self.maxpool(d2)
-        d3 = self.encode3(d3)
+        # d3 = self.maxpool(d2)
+        # d3 = self.encode3(d3)
 
-        c = self.maxpool(d3)
+        c = self.maxpool(d2)
         c = self.center(c)
 
-        u3 = self.up3(c)
-        u3 = crop_and_concat(u3,d3)
-        u3 = self.decode3(u3)
+        # u3 = self.up3(c)
+        # u3 = crop_and_concat(u3,d3)
+        # u3 = self.decode3(u3)
 
-        u2 = self.up2(u3)
+        u2 = self.up2(c)
         u2 = crop_and_concat(u2,d2)
         u2 = self.decode2(u2)
 
@@ -132,8 +132,6 @@ class UNet(nn.Module):
         return self.final(u1)
 
 def crop_and_concat(upsampled, bypass):
-    ## may run to troubles if c is not even. 
-    ## So, let us make sure that error is throw
     size = (bypass.size()[2] - upsampled.size()[2])
     if size%2 == 0:
         # print("c is even")
@@ -161,18 +159,18 @@ if __name__ == '__main__':
     # img,label = next(iter(train_loader))
     import numpy as np
     lookup_table = np.zeros(20,dtype='int16')
-    lookup_table[3]=45
-    lookup_table[4]=62
-    lookup_table[5]=80
-    lookup_table[6]=100
-    lookup_table[7]=120
-    lookup_table[8]=137
-    lookup_table[9]=156
-    kernel_size = 8
+    lookup_table[3]=20
+    lookup_table[4]=30
+    lookup_table[5]=38
+    lookup_table[6]=47
+    lookup_table[7]=55
+    lookup_table[8]=65
+    lookup_table[9]=75
+    kernel_size = 7
     feature_maps = 32
     print("Kernel Size", kernel_size)
     print("Initial Feature Maps",feature_maps)
-    size = 344+2*int(lookup_table[kernel_size])
+    size = 401+2*int(lookup_table[kernel_size])
     img = torch.Tensor(1,1,size,size)
     img = tensor_format(img)
     # label = tensor_format(label)
