@@ -75,7 +75,9 @@ class UpSample(nn.Module):
         if self.show:
              print(x.shape)
         return x
-            
+
+
+
 class UNet(nn.Module):
     def __init__(self,kernel_size,feature_maps,show=False):
         super().__init__()
@@ -86,20 +88,20 @@ class UNet(nn.Module):
 
         self.encode1 = Convolve(1,self.feature,self.kernel_size,'d1',show)
         self.encode2 = Convolve(self.feature,self.feature*2,self.kernel_size,'d2',show)
-        # self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
+        self.encode3 = Convolve(self.feature*2,self.feature*4,self.kernel_size,'d3',show)
 
-        self.center = Convolve(self.feature*2,self.feature*4,self.kernel_size,'c',show)
+        self.center = Convolve(self.feature*4,self.feature*8,self.kernel_size,'c',show)
 
-        # self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
+        self.decode3 = Convolve(self.feature*8,self.feature*4,self.kernel_size,'u3',show)
         self.decode2 = Convolve(self.feature*4,self.feature*2,self.kernel_size,'u2',show)
         self.decode1 = FinalConvolve(self.feature*2,self.feature,self.kernel_size,'u1',show)
 
 
-        # self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
+        self.up3 = UpSample(self.feature*8,self.feature*4,self.kernel_size)
         self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
         self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
-        self.final = nn.Conv2d(self.feature,2,1)
+        self.final = nn.Conv2d(self.feature,1,1)
 
     @property
     def final_conv_dead_neurons(self):
@@ -111,17 +113,17 @@ class UNet(nn.Module):
         d2= self.maxpool(d1)
         d2= self.encode2(d2)
 
-        # d3 = self.maxpool(d2)
-        # d3 = self.encode3(d3)
+        d3 = self.maxpool(d2)
+        d3 = self.encode3(d3)
 
-        c = self.maxpool(d2)
+        c = self.maxpool(d3)
         c = self.center(c)
 
-        # u3 = self.up3(c)
-        # u3 = crop_and_concat(u3,d3)
-        # u3 = self.decode3(u3)
+        u3 = self.up3(c)
+        u3 = crop_and_concat(u3,d3)
+        u3 = self.decode3(u3)
 
-        u2 = self.up2(c)
+        u2 = self.up2(u3)
         u2 = crop_and_concat(u2,d2)
         u2 = self.decode2(u2)
 

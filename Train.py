@@ -7,14 +7,25 @@ import torch.nn as nn
 import ipdb
 import scipy.misc
 import os
+from DataUtils import *
 # from FakeData import *
 from Data import *
-from DataUtils import *
-from ISBIData import *
+# from ISBIData import *
 
 from utils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
+# class DiceLoss(nn.Module):
+    # def __init__(self,smooth=1):
+        # super().__init__()
+        # self.smooth = smooth
+    # def forward(self,scores_matrix,targets_matrix):
+        # preds_matrix = F.sigmoid(scores_matrix) 
+
+# class BinaryCrossEntropy(nn.Module):
+    # def __init__(self):
+        # super().__init__()
+    # def forward(self,scores_matrix,targets_matrix):
 
 def initialNetGenerator(ks,fm,train_loader):
     good_net = False
@@ -27,9 +38,10 @@ def initialNetGenerator(ks,fm,train_loader):
             img, label = tensor_format(img), tensor_format(label)
             output = net(img)
             output, label = crop(output,label)
-            cell_prob_mean = getCellProb(output).mean()
+            cell_prob_mean = getSigmoidProb(output).mean()
+            # cell_prob_mean = getCellProb(output).mean()
             diff = abs(cell_prob_mean-0.5)
-            list_of_booleans.append(diff>0.25)
+            list_of_booleans.append(diff>0.2)
         outlier = any(list_of_booleans)
         if outlier:
             pass
@@ -40,21 +52,21 @@ def initialNetGenerator(ks,fm,train_loader):
 def dataCreator(ks):
     lookup_table = np.zeros(20,dtype='int16')
     ## 2 Layers, Image Size 401
-    lookup_table[3]=20
-    lookup_table[4]=30
-    lookup_table[5]=38
-    lookup_table[6]=47
-    lookup_table[7]=55
-    lookup_table[8]=65
-    lookup_table[9]=75
-    # ## 3 Layers, Image Size 401
-    # lookup_table[3]=45
-    # lookup_table[4]=62
-    # lookup_table[5]=80
-    # lookup_table[6]=100
-    # lookup_table[7]=120
-    # lookup_table[8]=137
-    # lookup_table[9]=156
+    # lookup_table[3]=20
+    # lookup_table[4]=30
+    # lookup_table[5]=38
+    # lookup_table[6]=47
+    # lookup_table[7]=55
+    # lookup_table[8]=65
+    # lookup_table[9]=75
+    ## 3 Layers, Image Size 401
+    lookup_table[3]=45
+    lookup_table[4]=62
+    lookup_table[5]=80
+    lookup_table[6]=100
+    lookup_table[7]=120
+    lookup_table[8]=137
+    lookup_table[9]=156
 
     ## 4 Layers, Image Size 401
     # lookup_table[3]=45
@@ -74,7 +86,7 @@ def dataCreator(ks):
     # train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_labels.npy'
     # test_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_images.npy'
     # test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_labels.npy'
-    path = '/home/bbli/ML_Code/UNet/Data/'
+    # path = '/home/bbli/ML_Code/UNet/Data/'
 
 
     center = Standarize()
@@ -111,7 +123,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     learn_rate = lr
     momentum_rate = 0.75
     cyclic_rate = 120
-    epochs = 60
+    # total_num_iterations = 80
+    epochs = 50
 
     net = initialNetGenerator(kernel_size,feature_maps,train_loader)
 
@@ -126,13 +139,14 @@ def trainModel(ks,fm,lr,train_loader,w):
     w.add_text('Model Parameters',model_parameters)
 
     weight_map = tensor_format(torch.FloatTensor(weight_map))
-    criterion = nn.CrossEntropyLoss(weight=weight_map)
+    # criterion = nn.CrossEntropyLoss(weight=weight_map)
+    criterion = nn.BCEWithLogitsLoss()
     # criterion = nn.CrossEntropyLoss()
 
 
-    optimizer = optim.RMSprop(net.parameters(),lr = learn_rate,momentum=momentum_rate)
+    optimizer = optim.SGD(net.parameters(),lr = learn_rate,momentum=momentum_rate)
     optimizer2 = optim.SGD(net.parameters(),lr = 0.2*learn_rate,momentum=0.9*momentum_rate)
-    # scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
+    scheduler = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
     scheduler2 = LambdaLR(optimizer,lr_lambda=cosine(cyclic_rate))
 
     count =0
@@ -143,29 +157,30 @@ def trainModel(ks,fm,lr,train_loader,w):
             img, label = tensor_format(img), tensor_format(label)
             output = net(img)
             output, label = crop(output,label)
-            ipdb.set_trace()
-            logInitialCellProb(output,count,w,g_dict_of_images)
-            loss = criterion(output, label)
+            # logInitialCellProb(output,count,w,g_dict_of_images)
+            logInitialSigmoidProb(output,count,w,g_dict_of_images)
+            loss = criterion(*changeForBCELoss(output,label))
 
             ################### **Logging** #########################
             w.add_scalar('Loss', loss.data[0],count)
             # print("Loss value: {}".format(loss))
 
-            acc = score(output,label)
+            # acc = score(output,label)
+            acc = sigmoidScore(output,label)
             w.add_scalar('Accuracy', float(acc),count)
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            # if epoch<20:
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            # scheduler.step()
-            # else:
-                # optimizer2.zero_grad()
-                # loss.backward()
-                # optimizer2.step()
-                # scheduler2.step()
+            if epoch<34:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+            else:
+                optimizer2.zero_grad()
+                loss.backward()
+                optimizer2.step()
+                scheduler2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -174,11 +189,14 @@ def testModel(net,test_loader,w):
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
-        test_score = score(output,label)
+        # test_score = score(output,label)
+        test_score = sigmoidScore(output,label)
 
         ################### **Prep for Logging** #########################
-        logFinalCellProb(output,w,g_dict_of_images)
-        seg = getPrediction(output)
+        # logFinalCellProb(output,w,g_dict_of_images)
+        logFinalSigmoidProb(output,w,g_dict_of_images)
+        # seg = getPrediction(output)
+        seg = getSigmoidPred(output)
         label = reduceLabelTo2D(label)
         ################### **Logging** #########################
         # w.add_image("Input",img[0],i)
@@ -190,41 +208,40 @@ def testModel(net,test_loader,w):
         break
     return test_score
 
-
-# fm =32
+fm =32
 ks = 3
-# lr = 2e-2
+lr = 8e-3
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
+os.chdir('binary_loss')
 
 # os.chdir('two_layer')
-os.chdir('debug')
+# os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
-## already tried 8e-3
-learn_rate_list = [2e-2,8e-3,3e-3,1e-3]
-learn_rate_list.reverse()
-kernel_list = [3,5,8]
-fm_list = [32,16,8]
+# learn_rate_list = [5e-5,2e-5,8e-6]
+# learn_rate_list.reverse()
+# kernel_list = [3,5,8]
+# fm_list = [32,16,8]
 count += 1
 # print("Run:",count)
 g_dict_of_images={}
-for lr in learn_rate_list:
-    for fm in fm_list:
-        train_loader,test_loader = dataCreator(ks)
-        w = SummaryWriter()
-        w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
-        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-        print("Feature Maps: {} Learning Rate: ".format(fm,lr))
-        model = trainModel(ks,fm,lr,train_loader,w)
-        test_score = testModel(model,test_loader,w)
-        print("Test score: ",str(test_score))
-        w.close()
+for _ in range(4):
+    train_loader,test_loader = dataCreator(ks)
+    w = SummaryWriter()
+    w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
+    # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+    # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
+    model = trainModel(ks,fm,lr,train_loader,w)
+    test_score = testModel(model,test_loader,w)
+    print("Test score: ",str(test_score))
+    w.close()
 
-        string = "ks_"+str(ks)+"lr_"+str(lr)
-        dict_of_image_dicts[string]=g_dict_of_images
+    string = "ks_"+str(ks)+"lr_"+str(lr)
+    dict_of_image_dicts[string]=g_dict_of_images
+###### Thoughts: Trying SGD again with very low learning rate
 
 # torch.save(best_model.state_dict(),'best_model.pt')
 # print("Log post train thoughts:")

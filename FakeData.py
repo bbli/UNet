@@ -14,18 +14,18 @@ from UNet import *
 ##########################################################
 
 class FakeDataset(Dataset):
-    def __init__(self,image_path,label_path,factor=None,transform=None):
+    def __init__(self,image_path,label_path,factor=None,transform=None,num_pic=None):
         self.transform = transform
         self.images = np.load(image_path)
-        ## Getting one image for testing purposes
-        # if num_pic:
-            # self.images = self.images[0:num_pic]
-            # printVariance(self.images)
-            # self.images = self.images.reshape(1,*self.images.shape)
         self.labels = np.load(label_path)
         if factor:
             self.images = downsize(self.images,factor)
             self.labels = downsize(self.labels,factor)
+        if num_pic:
+            self.images = self.images[0:num_pic]
+            self.labels = self.labels[0:num_pic]
+            # printVariance(self.images)
+            # self.images = self.images.reshape(1,*self.images.shape)
         # print(np.mean(self.images[0]))
     def fit(self,scalers):
         for scaler in scalers:
