@@ -45,15 +45,19 @@ class UnBiasedDiceLoss(nn.Module):
         Make sure targets_matrix has type float
         we assume both torch matrices are 3D
         '''
-        assert scores_matrix.shape == targets_matrix.shape, "scores and targets not the same shape"
-        num_pixels = getProductofTuple(scores_matrix.shape)
-        smooth = num_pixels*self.smooth_factor
-
         preds_matrix = F.sigmoid(scores_matrix) 
-        pic_intersection = preds_matrix*targets_matrix
-        pic_sum = preds_matrix.sum()+targets_matrix.sum()
-        overlap = (2*pic_intersection.sum()+smooth)/(pic_sum+smooth)
-        return 1-overlap
+        ## /2 to account for 2* in next line
+        pic_intersection = preds_matrix*targets_matrix+self.smooth_factor/2
+        pic_union = preds_matrix+targets_matrix+self.smooth_factor
+        fg_overlap = (2*pic_intersection.sum())/(pic_union.sum())
+
+        bg_preds_matrix = 1-preds_matrix
+        bg_targets = 1-targets_matrix
+        ## /2 to account for 2* in next line
+        bg_pic_intersection = bg_preds_matrix*bg_targets+self.smooth_factor/2
+        bg_pic_union = bg_preds_matrix+bg_targets+self.smooth_factor
+        bg_overlap = (2*bg_pic_intersection.sum())/(pic_union.sum())
+        return -fg_overlap-bg_overlap
 
 # class BinaryCrossEntropy(nn.Module):
     # def __init__(self):
@@ -149,12 +153,13 @@ def dataCreator(ks):
     return train_loader,test_loader
     # return train_loader,test_loader
 
-def trainModel(ks,fm,lr,train_loader,w):
+def trainModel(m,lr,ks,fm,train_loader,w):
 
     kernel_size = ks
     feature_maps = fm
     learn_rate = lr
-    momentum_rate = 0.75
+    # momentum_rate = 0.75
+    momentum_rate = m
     cyclic_rate = 120
     # total_num_iterations = 80
     epochs = 50
@@ -174,8 +179,8 @@ def trainModel(ks,fm,lr,train_loader,w):
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     # criterion = nn.CrossEntropyLoss(weight=weight_map)
     # criterion = nn.BCEWithLogitsLoss()
-    criterion = UnBiasedDiceLoss()
-    criterion1 = DiceLoss()
+    criterion = UnBiasedDiceLoss(smooth_factor=0.05)
+    # criterion1 = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
 
 
@@ -196,8 +201,7 @@ def trainModel(ks,fm,lr,train_loader,w):
             logInitialSigmoidProb(output,count,w,g_dict_of_images)
             ## also works for Dice Loss
             loss = criterion(*changeForBCELoss(output,label))
-            loss1 = criterion1(*changeForBCELoss(output,label))
-            ipdb.set_trace()
+            # loss1 = criterion1(*changeForBCELoss(output,label))
 
             ################### **Logging** #########################
             w.add_scalar('Loss', loss.data[0],count)
@@ -248,38 +252,40 @@ def testModel(net,test_loader,w):
 
 fm =32
 ks = 3
-lr = 8e-3
+# lr = 8e-3
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
 # os.chdir('binary_loss')
-# os.chdir('dice_loss')
+os.chdir('dice_loss')
 
 # os.chdir('two_layer')
-os.chdir('debug')
+# os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
-# learn_rate_list = [5e-5,2e-5,8e-6]
-# learn_rate_list.reverse()
+learn_rate_list = [8e-3,3e-3,1e-3]
+momentum_rate_list = [0.95,0.875,0.8]
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
 g_dict_of_images={}
-for _ in range(4):
-    count += 1
-    print("Run:",count)
-    train_loader,test_loader = dataCreator(ks)
-    w = SummaryWriter()
-    w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
-    # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-    # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
-    model = trainModel(ks,fm,lr,train_loader,w)
-    test_score = testModel(model,test_loader,w)
-    print("Test score: ",str(test_score))
-    w.close()
+for lr in learn_rate_list:
+    for m in momentum_rate_list:
+        count += 1
+        print("Run:",count)
+        train_loader,test_loader = dataCreator(ks)
+        w = SummaryWriter()
+        w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
+        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+        # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
+        print("Learning Rate : {} Momentum Rate: {}".format(lr,m))
+        model = trainModel(m,lr,ks,fm,train_loader,w)
+        test_score = testModel(model,test_loader,w)
+        print("Test score: ",str(test_score))
+        w.close()
 
-    string = "ks_"+str(ks)+"lr_"+str(lr)
-    dict_of_image_dicts[string]=g_dict_of_images
+        string = "ks_"+str(ks)+"lr_"+str(lr)
+        dict_of_image_dicts[string]=g_dict_of_images
 ###### Thoughts: Trying SGD again with very low learning rate
 
 # torch.save(best_model.state_dict(),'best_model.pt')
