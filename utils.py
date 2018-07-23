@@ -52,10 +52,23 @@ def getPrediction(score_variable):
     pred = np.argmax(cell_prob,axis=1)
     return pred[0]
 
+def getSigmoidPred(score_variable):
+    cell_prob = getSigmoidProb(score_variable) 
+    cell_diff = cell_prob - 0.5 
+    return np.heaviside(cell_diff,1)
+
 def reduceLabelTo2D(labels):
     labels = labels.cpu().data.numpy()
     return labels[0]
-
+##########################################################
+def sigmoidScore(score_variable,label):
+    # cell_prob = getSigmoidProb(score_variable)
+    label = reduceLabelTo2D(label)
+    # diff = np.abs(cell_prob - label)
+    # boo = diff<0.5
+    cell_pred = getSigmoidPred(score_variable)
+    boo = (cell_pred==label)
+    return boo.mean()
 
 def reduceTo2D(outputs,labels):
     outputs = outputs.cpu().data.numpy()
@@ -75,6 +88,14 @@ def getCellProb(score_variable):
     cell_prob = cell_prob[0,1,:,:]
     return cell_prob
 
+def getSigmoidProb(score_variable):
+    '''
+    returns a 2d numpy matrix of the probabilities for each pixel
+    '''
+    cell_prob = F.sigmoid(score_variable)
+    cell_prob = cell_prob.cpu().data.numpy()
+    return cell_prob[0,0]
+
 def logImage(numpy_array):
     '''
     Converts numpy image into a 3D Torch Tensor
@@ -91,8 +112,26 @@ def logInitialCellProb(torch_tensor,count,w,dict_of_images):
         print("Initial Cell Prob Mean:",cell_prob.mean())
         # print("Sample of Initial Cell Probabilties")
         # print(cell_prob[100:105,100:105])
+
+def logInitialSigmoidProb(torch_tensor,count,w,dict_of_images):
+    if count==1:
+        cell_prob = getSigmoidProb(torch_tensor)
+        w.add_image("Initial Cell Probability",logImage(cell_prob),count)
+        dict_of_images["Initial Cell Prob"] = cell_prob
+        print("Initial Cell Prob Mean:",cell_prob.mean())
+        # print("Sample of Initial Cell Probabilties")
+        # print(cell_prob[100:105,100:105])
+
 def logFinalCellProb(score_variable,w,dict_of_images):
     final_cell_prob = getCellProb(score_variable)
+    w.add_image("Final Cell Probability",logImage(final_cell_prob),1)
+    dict_of_images["Final Cell Prob"] = final_cell_prob
+    print("Final Cell Prob Mean:",final_cell_prob.mean())
+    print("Sample of Final Cell Probabilties")
+    print(final_cell_prob[100:105,100:105])
+
+def logFinalSigmoidProb(score_variable,w,dict_of_images):
+    final_cell_prob = getSigmoidProb(score_variable)
     w.add_image("Final Cell Probability",logImage(final_cell_prob),1)
     dict_of_images["Final Cell Prob"] = final_cell_prob
     print("Final Cell Prob Mean:",final_cell_prob.mean())
@@ -187,4 +226,5 @@ def doubler(time_steps):
         return 2**ratio
     return f
 
-        
+def changeForBCELoss(output,label):
+    return output[0],label.float()

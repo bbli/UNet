@@ -15,12 +15,45 @@ from Data import *
 from utils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
-# class DiceLoss(nn.Module):
-    # def __init__(self,smooth=1):
-        # super().__init__()
-        # self.smooth = smooth
-    # def forward(self,scores_matrix,targets_matrix):
-        # preds_matrix = F.sigmoid(scores_matrix) 
+class DiceLoss(nn.Module):
+    def __init__(self,smooth_factor=1):
+        super().__init__()
+        self.smooth_factor = smooth_factor
+    def forward(self,scores_matrix,targets_matrix):
+        '''
+        Make sure targets_matrix has type float
+        we assume both torch matrices are 3D
+        '''
+        # assert scores_matrix.shape == targets_matrix.shape, "scores and targets not the same shape"
+        # num_pixels = getProductofTuple(scores_matrix.shape)
+        # smooth = num_pixels*self.smooth_factor
+
+        preds_matrix = F.sigmoid(scores_matrix) 
+        ## /2 to account for 2* in next line
+        pic_intersection = preds_matrix*targets_matrix+self.smooth_factor/2
+        pic_union = preds_matrix+targets_matrix+self.smooth_factor
+
+        overlap = (2*pic_intersection.sum())/(pic_union.sum())
+        return 1-overlap
+        
+class UnBiasedDiceLoss(nn.Module):
+    def __init__(self,smooth_factor=1):
+        super().__init__()
+        self.smooth_factor = smooth_factor
+    def forward(self,scores_matrix,targets_matrix):
+        '''
+        Make sure targets_matrix has type float
+        we assume both torch matrices are 3D
+        '''
+        assert scores_matrix.shape == targets_matrix.shape, "scores and targets not the same shape"
+        num_pixels = getProductofTuple(scores_matrix.shape)
+        smooth = num_pixels*self.smooth_factor
+
+        preds_matrix = F.sigmoid(scores_matrix) 
+        pic_intersection = preds_matrix*targets_matrix
+        pic_sum = preds_matrix.sum()+targets_matrix.sum()
+        overlap = (2*pic_intersection.sum()+smooth)/(pic_sum+smooth)
+        return 1-overlap
 
 # class BinaryCrossEntropy(nn.Module):
     # def __init__(self):
@@ -140,7 +173,9 @@ def trainModel(ks,fm,lr,train_loader,w):
 
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     # criterion = nn.CrossEntropyLoss(weight=weight_map)
-    criterion = nn.BCEWithLogitsLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = UnBiasedDiceLoss()
+    criterion1 = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
 
 
@@ -159,7 +194,10 @@ def trainModel(ks,fm,lr,train_loader,w):
             output, label = crop(output,label)
             # logInitialCellProb(output,count,w,g_dict_of_images)
             logInitialSigmoidProb(output,count,w,g_dict_of_images)
+            ## also works for Dice Loss
             loss = criterion(*changeForBCELoss(output,label))
+            loss1 = criterion1(*changeForBCELoss(output,label))
+            ipdb.set_trace()
 
             ################### **Logging** #########################
             w.add_scalar('Loss', loss.data[0],count)
@@ -215,20 +253,21 @@ lr = 8e-3
 # os.chdir('level_out_loss/fake1')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
-os.chdir('binary_loss')
+# os.chdir('binary_loss')
+# os.chdir('dice_loss')
 
 # os.chdir('two_layer')
-# os.chdir('debug')
+os.chdir('debug')
 count = 0
 dict_of_image_dicts ={}
 # learn_rate_list = [5e-5,2e-5,8e-6]
 # learn_rate_list.reverse()
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
-count += 1
-# print("Run:",count)
 g_dict_of_images={}
 for _ in range(4):
+    count += 1
+    print("Run:",count)
     train_loader,test_loader = dataCreator(ks)
     w = SummaryWriter()
     w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
