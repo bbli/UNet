@@ -226,5 +226,18 @@ def doubler(time_steps):
         return 2**ratio
     return f
 
-def changeForBCELoss(output,label):
+def changeForBCEAndDiceLoss(output,label):
     return output[0],label.float()
+
+def getSoftOverLap(scores_matrix,targets_matrix):
+    scores_matrix, targets_matrix = changeForBCEAndDiceLoss(scores_matrix,targets_matrix)
+    preds_matrix = F.sigmoid(scores_matrix) 
+    bg_preds_matrix = 1- preds_matrix
+    bg_targets_matrix = 1- targets_matrix
+
+    fg_intersection = preds_matrix*targets_matrix
+    bg_intersection = bg_preds_matrix*bg_targets_matrix 
+    num_pixels = getProductofTuple(targets_matrix.shape)
+    overlap = (fg_intersection.sum()+bg_intersection.sum())/num_pixels
+    return float(overlap.cpu().data.numpy())
+

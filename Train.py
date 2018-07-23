@@ -202,11 +202,12 @@ def trainModel(s,lr,ks,fm,train_loader,w):
             # logInitialCellProb(output,count,w,g_dict_of_images)
             logInitialSigmoidProb(output,count,w,g_dict_of_images)
             ## also works for Dice Loss
-            loss = criterion(*changeForBCELoss(output,label))
-            # loss1 = criterion1(*changeForBCELoss(output,label))
+            loss = criterion(*changeForBCEAndDiceLoss(output,label))
+            # loss1 = criterion1(*changeForBCEAndDiceLoss(output,label))
 
             ################### **Logging** #########################
-            w.add_scalar('Loss', loss.data[0],count)
+            w.add_scalar('UnBiasedDiceLossLoss', loss.data[0],count)
+            w.add_scalar('Overlap',getSoftOverLap(output,label),count)
             # print("Loss value: {}".format(loss))
 
             # acc = score(output,label)
@@ -260,28 +261,29 @@ ks = 3
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
 # os.chdir('binary_loss')
-os.chdir('dice_loss')
+# os.chdir('dice_loss/smooth_hyper')
 
 # os.chdir('two_layer')
-# os.chdir('debug')
+os.chdir('debug')
+# os.chdir('debug_dice_loss')
 count = 0
 dict_of_image_dicts ={}
-learn_rate_list = [8e-3,3e-3,1e-3]
-momentum_rate_list = [0.95,0.875,0.8]
+learn_rate_list = [8e-3,2e-3,4e-4]
+smooth_factor_list = [0.3,1,2]
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
 g_dict_of_images={}
-for lr in learn_rate_list:
-    for m in momentum_rate_list:
+for s in smooth_factor_list:
+    for lr in learn_rate_list:
         count += 1
         print("Run:",count)
         train_loader,test_loader = dataCreator(ks)
         w = SummaryWriter()
-        w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
+        # w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
+        print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
         # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
         # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
-        print("Learning Rate : {} Momentum Rate: {}".format(lr,m))
-        model = trainModel(m,lr,ks,fm,train_loader,w)
+        model = trainModel(s,lr,ks,fm,train_loader,w)
         test_score = testModel(model,test_loader,w)
         print("Test score: ",str(test_score))
         w.close()
