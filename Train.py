@@ -37,9 +37,10 @@ class DiceLoss(nn.Module):
         return 1-overlap
         
 class UnBiasedDiceLoss(nn.Module):
-    def __init__(self,smooth_factor=1):
+    def __init__(self,smooth_factor=0.5,fg_weight=1):
         super().__init__()
         self.smooth_factor = smooth_factor
+        self.fg_weight = fg_weight
     def forward(self,scores_matrix,targets_matrix):
         '''
         Make sure targets_matrix has type float
@@ -57,8 +58,8 @@ class UnBiasedDiceLoss(nn.Module):
         bg_pic_intersection = bg_preds_matrix*bg_targets+self.smooth_factor/2
         bg_pic_union = bg_preds_matrix+bg_targets+self.smooth_factor
         bg_overlap = (2*bg_pic_intersection.sum())/(bg_pic_union.sum())
-        # return 2-fg_overlap-bg_overlap
-        return 1-bg_overlap
+        return 2-fg_overlap-bg_overlap
+        # return 1-bg_overlap
 
 # class BinaryCrossEntropy(nn.Module):
     # def __init__(self):
@@ -268,7 +269,7 @@ os.chdir('debug')
 # os.chdir('debug_dice_loss')
 count = 0
 dict_of_image_dicts ={}
-learn_rate_list = [8e-3,2e-3,4e-4]
+learn_rate_list = [8e-4,2e-4,6e-5]
 smooth_factor_list = [0.3,1,2]
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
