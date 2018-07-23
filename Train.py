@@ -56,8 +56,9 @@ class UnBiasedDiceLoss(nn.Module):
         ## /2 to account for 2* in next line
         bg_pic_intersection = bg_preds_matrix*bg_targets+self.smooth_factor/2
         bg_pic_union = bg_preds_matrix+bg_targets+self.smooth_factor
-        bg_overlap = (2*bg_pic_intersection.sum())/(pic_union.sum())
-        return -fg_overlap-bg_overlap
+        bg_overlap = (2*bg_pic_intersection.sum())/(bg_pic_union.sum())
+        # return 2-fg_overlap-bg_overlap
+        return 1-bg_overlap
 
 # class BinaryCrossEntropy(nn.Module):
     # def __init__(self):
@@ -153,13 +154,14 @@ def dataCreator(ks):
     return train_loader,test_loader
     # return train_loader,test_loader
 
-def trainModel(m,lr,ks,fm,train_loader,w):
+## Include Smoothing factor
+def trainModel(s,lr,ks,fm,train_loader,w):
 
     kernel_size = ks
     feature_maps = fm
     learn_rate = lr
-    # momentum_rate = 0.75
-    momentum_rate = m
+    momentum_rate = 0.75
+    # momentum_rate = m
     cyclic_rate = 120
     # total_num_iterations = 80
     epochs = 50
@@ -179,7 +181,7 @@ def trainModel(m,lr,ks,fm,train_loader,w):
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     # criterion = nn.CrossEntropyLoss(weight=weight_map)
     # criterion = nn.BCEWithLogitsLoss()
-    criterion = UnBiasedDiceLoss(smooth_factor=0.05)
+    criterion = UnBiasedDiceLoss(smooth_factor=s)
     # criterion1 = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
 
