@@ -58,7 +58,7 @@ class UnBiasedDiceLoss(nn.Module):
         bg_pic_intersection = bg_preds_matrix*bg_targets+self.smooth_factor/2
         bg_pic_union = bg_preds_matrix+bg_targets+self.smooth_factor
         bg_overlap = (2*bg_pic_intersection.sum())/(bg_pic_union.sum())
-        return 2-fg_overlap-bg_overlap
+        return 2-self.fg_weight*fg_overlap-bg_overlap
         # return 1-bg_overlap
 
 # class BinaryCrossEntropy(nn.Module):
@@ -182,7 +182,7 @@ def trainModel(s,lr,ks,fm,train_loader,w):
     weight_map = tensor_format(torch.FloatTensor(weight_map))
     # criterion = nn.CrossEntropyLoss(weight=weight_map)
     # criterion = nn.BCEWithLogitsLoss()
-    criterion = UnBiasedDiceLoss(smooth_factor=s)
+    criterion = UnBiasedDiceLoss(fg_weight=fg)
     # criterion1 = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
 
@@ -217,16 +217,16 @@ def trainModel(s,lr,ks,fm,train_loader,w):
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
             ################### **Update Back** #########################
-            if epoch<34:
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                scheduler.step()
-            else:
-                optimizer2.zero_grad()
-                loss.backward()
-                optimizer2.step()
-                scheduler2.step()
+            # if epoch<34:
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+            # else:
+                # optimizer2.zero_grad()
+                # loss.backward()
+                # optimizer2.step()
+                # scheduler2.step()
     return net
 
 def testModel(net,test_loader,w):
@@ -256,41 +256,44 @@ def testModel(net,test_loader,w):
 
 fm =32
 ks = 3
-# lr = 8e-3
+lr = 8e-3
 # os.chdir('level_out_loss/learn_rate')
 # os.chdir('level_out_loss/fake1')
 # os.chdir('level_out_loss/num_pic')
 # os.chdir('level_out_loss/normalization')
 # os.chdir('binary_loss')
 # os.chdir('dice_loss/smooth_hyper')
+os.chdir('final')
 
 # os.chdir('two_layer')
-os.chdir('debug')
+# os.chdir('debug')
 # os.chdir('debug_dice_loss')
 count = 0
 dict_of_image_dicts ={}
-learn_rate_list = [8e-4,2e-4,6e-5]
-smooth_factor_list = [0.3,1,2]
+# learn_rate_list = [2e-2,8e-3,2e-3]
+# smooth_factor_list = [0.3,1,2]
+fg_weight_list = [0.5,1,1.5]
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
 g_dict_of_images={}
-for s in smooth_factor_list:
-    for lr in learn_rate_list:
-        count += 1
-        print("Run:",count)
-        train_loader,test_loader = dataCreator(ks)
-        w = SummaryWriter()
-        # w.add_text("Thoughts","Testing on ISBI dataset now.Modified testModel to break after the first image")
-        print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
-        # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
-        # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
-        model = trainModel(s,lr,ks,fm,train_loader,w)
-        test_score = testModel(model,test_loader,w)
-        print("Test score: ",str(test_score))
-        w.close()
+# for lr in learn_rate_list:
+for fg in fg_weight_list:
+    count += 1
+    print("Run:",count)
+    train_loader,test_loader = dataCreator(ks)
+    w = SummaryWriter()
+    w.add_text("Thoughts","Limiting ISBI dataset to 10 images to see if it can achieve same accuracy. First with dice loss")
+    # print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
+    # print("FG Factor: {} Learning Rate: {}".format(fg,lr))
+    # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
+    # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
+    model = trainModel(fg,lr,ks,fm,train_loader,w)
+    test_score = testModel(model,test_loader,w)
+    print("Test score: ",str(test_score))
+    w.close()
 
-        string = "ks_"+str(ks)+"lr_"+str(lr)
-        dict_of_image_dicts[string]=g_dict_of_images
+    string = "ks_"+str(ks)+"lr_"+str(lr)
+    dict_of_image_dicts[string]=g_dict_of_images
 ###### Thoughts: Trying SGD again with very low learning rate
 
 # torch.save(best_model.state_dict(),'best_model.pt')
