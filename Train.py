@@ -9,8 +9,8 @@ import scipy.misc
 import os
 from DataUtils import *
 # from FakeData import *
-from Data import *
-# from ISBIData import *
+# from Data import *
+from ISBIData import *
 
 from utils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
@@ -125,38 +125,39 @@ def dataCreator(ks):
     # train_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/train_labels.npy'
     # test_images_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_images.npy'
     # test_labels_path = '/home/bbli/ML_Code/UNet/Data/fake1/test_labels.npy'
-    # path = '/home/bbli/ML_Code/UNet/Data/'
+    path = '/home/bbli/ML_Code/UNet/Data/'
 
 
-    center = Standarize()
-    # center1 = Standarize()
+    # center = Standarize()
+    center1 = Standarize()
     pad_size = lookup_table[ks]
     assert pad_size != 0, "You have not initialized the padding for this kernel size"
     # print("Pad size: ",pad_size)
     pad = Padder(pad_size)
-    transforms = Compose([center,pad])
-    # transforms1 = Compose([center1,pad])
+    # transforms = Compose([center,pad])
+    transforms1 = Compose([center1,pad])
     ##########################################################
     # print("Hi")
-    train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
-    # train_dataset1 = ISBIDataset(path,transforms1,factor=2)
+    # train_dataset = ParhyaleDataset(train_images_path,train_labels_path,transform=transforms)
+    train_dataset1 = ISBIDataset(path,transforms1,factor=2)
     # train_dataset = FakeDataset(train_images_path,train_labels_path,transform=transforms)
-    train_dataset.fit([center])
-    # train_dataset1.fit([center1])
-    checkTrainSetMean(train_dataset)
-    # checkTrainSetMean(train_dataset1)
 
-    test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
+    # train_dataset.fit([center])
+    train_dataset1.fit([center1])
+    # checkTrainSetMean(train_dataset)
+    checkTrainSetMean(train_dataset1)
+
+    # test_dataset = ParhyaleDataset(test_images_path,test_labels_path,transform=transforms)
     # test_dataset = FakeDataset(test_images_path,test_labels_path,transform=transforms)
     ################### **Export Variables** #########################
-    train_loader = DataLoader(train_dataset,shuffle=True)
-    # train_loader1 = DataLoader(train_dataset1,shuffle=True)
-    test_loader = DataLoader(test_dataset,shuffle=True)
-    return train_loader,test_loader
+    # train_loader = DataLoader(train_dataset,shuffle=True)
+    train_loader1 = DataLoader(train_dataset1,shuffle=True)
+    # test_loader = DataLoader(test_dataset,shuffle=True)
     # return train_loader,test_loader
+    return train_loader1
 
 ## Include Smoothing factor
-def trainModel(s,lr,ks,fm,train_loader,w):
+def trainModel(lr,ks,fm,train_loader,w):
 
     kernel_size = ks
     feature_maps = fm
@@ -180,9 +181,10 @@ def trainModel(s,lr,ks,fm,train_loader,w):
     w.add_text('Model Parameters',model_parameters)
 
     weight_map = tensor_format(torch.FloatTensor(weight_map))
-    # criterion = nn.CrossEntropyLoss(weight=weight_map)
+    criterion = nn.CrossEntropyLoss(weight=weight_map)
     # criterion = nn.BCEWithLogitsLoss()
-    criterion = UnBiasedDiceLoss(fg_weight=fg)
+    # criterion = UnBiasedDiceLoss(fg_weight=fg)
+    # criterion = UnBiasedDiceLoss()
     # criterion1 = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
 
@@ -203,7 +205,8 @@ def trainModel(s,lr,ks,fm,train_loader,w):
             # logInitialCellProb(output,count,w,g_dict_of_images)
             logInitialSigmoidProb(output,count,w,g_dict_of_images)
             ## also works for Dice Loss
-            loss = criterion(*changeForBCEAndDiceLoss(output,label))
+            loss = criterion(output,label)
+            # loss = criterion(*changeForBCEAndDiceLoss(output,label))
             # loss1 = criterion1(*changeForBCEAndDiceLoss(output,label))
 
             ################### **Logging** #########################
@@ -272,28 +275,31 @@ count = 0
 dict_of_image_dicts ={}
 # learn_rate_list = [2e-2,8e-3,2e-3]
 # smooth_factor_list = [0.3,1,2]
-fg_weight_list = [0.5,1,1.5]
+# fg_weight_list = [0.5,1,1.5]
 # kernel_list = [3,5,8]
 # fm_list = [32,16,8]
 g_dict_of_images={}
 # for lr in learn_rate_list:
-for fg in fg_weight_list:
+# for fg in fg_weight_list:
+for _ in range(4):
     count += 1
     print("Run:",count)
-    train_loader,test_loader = dataCreator(ks)
+    # train_loader,test_loader = dataCreator(ks)
+    train_loader = dataCreator(ks)
     w = SummaryWriter()
-    w.add_text("Thoughts","Limiting ISBI dataset to 10 images to see if it can achieve same accuracy. First with dice loss")
+    w.add_text("Thoughts","Limiting ISBI dataset to 10 images to see if it can achieve same accuracy. Now with cross entropy")
     # print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
     # print("FG Factor: {} Learning Rate: {}".format(fg,lr))
     # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
     # print("Feature Maps: {} Learning Rate: {}".format(fm,lr))
-    model = trainModel(fg,lr,ks,fm,train_loader,w)
-    test_score = testModel(model,test_loader,w)
-    print("Test score: ",str(test_score))
+    model = trainModel(lr,ks,fm,train_loader,w)
+    # test_score = testModel(model,test_loader,w)
+    test_score = testModel(model,train_loader,w)
+    # print("Test score: ",str(test_score))
     w.close()
 
-    string = "ks_"+str(ks)+"lr_"+str(lr)
-    dict_of_image_dicts[string]=g_dict_of_images
+    # string = "ks_"+str(ks)+"lr_"+str(lr)
+    # dict_of_image_dicts[string]=g_dict_of_images
 ###### Thoughts: Trying SGD again with very low learning rate
 
 # torch.save(best_model.state_dict(),'best_model.pt')

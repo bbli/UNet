@@ -21,6 +21,9 @@ class ISBIDataset(Dataset):
         if factor:
             self.images = downsize(self.images,factor)
             self.labels = downsize(self.labels,factor)
+        ## To test if num_images is reason for better accuracy
+        self.images = self.images[0:10]
+        self.labels = self.labels[0:10]
     def __len__(self):
         return len(self.images)
     def __getitem__(self,index):
