@@ -101,7 +101,7 @@ class UNet(nn.Module):
         self.up2 = UpSample(self.feature*4,self.feature*2,self.kernel_size)
         self.up1 = UpSample(self.feature*2,self.feature,self.kernel_size)
 
-        self.final = nn.Conv2d(self.feature,1,1)
+        self.final = nn.Conv2d(self.feature,2,1)
 
     @property
     def final_conv_dead_neurons(self):

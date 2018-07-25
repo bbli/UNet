@@ -77,8 +77,8 @@ def initialNetGenerator(ks,fm,train_loader):
             img, label = tensor_format(img), tensor_format(label)
             output = net(img)
             output, label = crop(output,label)
-            cell_prob_mean = getSigmoidProb(output).mean()
-            # cell_prob_mean = getCellProb(output).mean()
+            cell_prob_mean = getCellProb(output).mean()
+            # cell_prob_mean = getSigmoidProb(output).mean()
             diff = abs(cell_prob_mean-0.5)
             list_of_booleans.append(diff>0.2)
         outlier = any(list_of_booleans)
@@ -166,7 +166,7 @@ def trainModel(lr,ks,fm,train_loader,w):
     # momentum_rate = m
     cyclic_rate = 120
     # total_num_iterations = 80
-    epochs = 50
+    epochs = 40
 
     net = initialNetGenerator(kernel_size,feature_maps,train_loader)
 
@@ -202,20 +202,21 @@ def trainModel(lr,ks,fm,train_loader,w):
             img, label = tensor_format(img), tensor_format(label)
             output = net(img)
             output, label = crop(output,label)
-            # logInitialCellProb(output,count,w,g_dict_of_images)
-            logInitialSigmoidProb(output,count,w,g_dict_of_images)
+            logInitialCellProb(output,count,w,g_dict_of_images)
+            # logInitialSigmoidProb(output,count,w,g_dict_of_images)
             ## also works for Dice Loss
             loss = criterion(output,label)
             # loss = criterion(*changeForBCEAndDiceLoss(output,label))
             # loss1 = criterion1(*changeForBCEAndDiceLoss(output,label))
 
             ################### **Logging** #########################
-            w.add_scalar('UnBiasedDiceLossLoss', loss.data[0],count)
-            w.add_scalar('Overlap',getSoftOverLap(output,label),count)
+            # w.add_scalar('UnBiasedDiceLossLoss', loss.data[0],count)
+            # w.add_scalar('Overlap',getSoftOverLap(output,label),count)
+            w.add_scalar('Loss', loss.data[0],count)
             # print("Loss value: {}".format(loss))
 
-            # acc = score(output,label)
-            acc = sigmoidScore(output,label)
+            acc = score(output,label)
+            # acc = sigmoidScore(output,label)
             w.add_scalar('Accuracy', float(acc),count)
             w.add_scalar('Percentage of Dead Neurons',net.final_conv_dead_neurons,count)
             # print("Accuracy: {}".format(acc))
@@ -238,14 +239,14 @@ def testModel(net,test_loader,w):
         img, label = tensor_format(img), tensor_format(label)
         output = net(img)
         output, label = crop(output,label)
-        # test_score = score(output,label)
-        test_score = sigmoidScore(output,label)
+        test_score = score(output,label)
+        # test_score = sigmoidScore(output,label)
 
         ################### **Prep for Logging** #########################
-        # logFinalCellProb(output,w,g_dict_of_images)
-        logFinalSigmoidProb(output,w,g_dict_of_images)
-        # seg = getPrediction(output)
-        seg = getSigmoidPred(output)
+        logFinalCellProb(output,w,g_dict_of_images)
+        # logFinalSigmoidProb(output,w,g_dict_of_images)
+        seg = getPrediction(output)
+        # seg = getSigmoidPred(output)
         label = reduceLabelTo2D(label)
         ################### **Logging** #########################
         # w.add_image("Input",img[0],i)
@@ -287,7 +288,7 @@ for _ in range(4):
     # train_loader,test_loader = dataCreator(ks)
     train_loader = dataCreator(ks)
     w = SummaryWriter()
-    w.add_text("Thoughts","Limiting ISBI dataset to 10 images to see if it can achieve same accuracy. Now with cross entropy")
+    w.add_text("Thoughts","Now actually with cross entropy since I need to change UNet back to 2 feature maps")
     # print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
     # print("FG Factor: {} Learning Rate: {}".format(fg,lr))
     # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
