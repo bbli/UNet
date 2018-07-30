@@ -6,7 +6,7 @@ from torch import optim
 import torch.nn as nn
 import ipdb
 
-from utils import *
+from TrainUtils import *
 from FakeData import *
 from UNet import *
 

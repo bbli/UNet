@@ -10,7 +10,7 @@ from skimage.transform import downscale_local_mean
 import ipdb
 from DataUtils import *
 
-from utils import *
+from TrainUtils import *
 from UNet import *
     
 ##########################################################

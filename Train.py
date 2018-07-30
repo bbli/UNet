@@ -12,7 +12,7 @@ from DataUtils import *
 # from Data import *
 from ISBIData import *
 
-from utils import *
+from TrainUtils import *
 # from Data import readImages,stackImages,downsize,fixLabeling,ParhyaleDataset,Standarize,Padder,test_loader
 from UNet import *
 class DiceLoss(nn.Module):
@@ -166,7 +166,7 @@ def trainModel(lr,ks,fm,train_loader,w):
     # momentum_rate = m
     cyclic_rate = 120
     # total_num_iterations = 80
-    epochs = 40
+    epochs = 14
 
     net = initialNetGenerator(kernel_size,feature_maps,train_loader)
 
@@ -288,7 +288,7 @@ for _ in range(4):
     # train_loader,test_loader = dataCreator(ks)
     train_loader = dataCreator(ks)
     w = SummaryWriter()
-    w.add_text("Thoughts","Now actually with cross entropy since I need to change UNet back to 2 feature maps")
+    w.add_text("Thoughts","Now training on full ISBI with less epochs to equate iterations")
     # print("Smoothing Factor: {} Learning Rate: {}".format(s,lr))
     # print("FG Factor: {} Learning Rate: {}".format(fg,lr))
     # print("Kernel Size: {} Learning Rate: {}".format(ks,lr))
@@ -296,7 +296,7 @@ for _ in range(4):
     model = trainModel(lr,ks,fm,train_loader,w)
     # test_score = testModel(model,test_loader,w)
     test_score = testModel(model,train_loader,w)
-    # print("Test score: ",str(test_score))
+    print("Test score: ",str(test_score))
     w.close()
 
     # string = "ks_"+str(ks)+"lr_"+str(lr)
