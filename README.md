@@ -1,4 +1,5 @@
 # README
+This repo holds my implementation of the [UNet](https://arxiv.org/pdf/1505.04597.pdf), as well as the training code(no data) for the parhyale dataset I was using as an undergraduate research in Professor Streichan's biophysics lab at UCSB.
 ## UNET Design Choices
 In the forward method of my UNet, there are some repeated operations that can be easily abstracted into a function. I have chosen not to, because I don't find that abstraction necessary, especially if I plan to hook into various parts of the UNet to inspect, rather than just using it as a black box.
 
@@ -8,11 +9,11 @@ Finally, the subclasses that I created, though they did serve the purpose of abs
 
 ## Observations
 ### Biased Dice Loss
-It seems to me that the dice loss people are [using](http://forums.fast.ai/t/dice-loss-not-decreasing/16789) do not care about the accuracy of the bg predition, and thus is biased towards the foreground. And indeed, when I used this version of the dice loss, I got:
+It seems to me that the dice loss people are [using](http://forums.fast.ai/t/dice-loss-not-decreasing/16789) do not care about the accuracy of the background prediction, and thus is biased towards the foreground. And indeed, when I used this version of the dice loss, I got:
 
-![biased](biased_dice_loss.png)
+![biased](pics/biased_dice_loss.png)
 
-as compared to the label
+which is, as expected, trigger happy on the foreground(See label below)
 
 ![label](pics/label.png)
 
@@ -21,7 +22,7 @@ When I implemented an unbiased dice loss(see page 2 of this [paper](https://arxi
 ![unbiased](pics/unbiased_dice_loss.png)
 
 
-After some investigation, it seems to me that the biased dice loss was introduced in a Kaggle competition, and people have been using it ever since. For the datasets that it has been used on(see [this](https://github.com/jakeoung/Unet_pytorch) and [this](https://tuatini.me/practical-image-segmentation-with-unet/)), the ground truth is a single blob, which is not the case for my dataset.
+After some investigation as to why people would use the biased dice loss, it seems to me that for the datasets that it has been used on(see [this](https://github.com/jakeoung/Unet_pytorch) and [this](https://tuatini.me/practical-image-segmentation-with-unet/)), the ground truth is a single blob, which is not the case for my dataset.
 
 ### Cross Entropy vs Dice Loss Probabilities
 
@@ -33,9 +34,3 @@ Given a few images, it turns out that it is very hard to overfit the train accur
 
 ### Behavior of Adam Optimizer
 No matter what my other hyperparameter settings were, Adam always gave a black canvas as its final prediction. My hypothesis for the cause of this behavior is that adam is choosing a local minimum way too early, due to its adaptive learning rate quickly converging and the lack of a momentum term(by this I mean an additive term. Adam has a term that looks like a momentum, but factors in multiplicatively, not additively)
-
-
-UNET is really good at detecting single blobs
-https://github.com/jakeoung/Unet_pytorch or https://tuatini.me/practical-image-segmentation-with-unet/
-
-## Final pictures
