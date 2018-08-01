@@ -267,7 +267,7 @@ lr = 8e-3
 # os.chdir('level_out_loss/normalization')
 # os.chdir('binary_loss')
 # os.chdir('dice_loss/smooth_hyper')
-os.chdir('final')
+os.chdir('tensorboard_logs/final')
 
 # os.chdir('two_layer')
 # os.chdir('debug')
